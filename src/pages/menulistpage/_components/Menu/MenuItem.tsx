@@ -22,10 +22,11 @@ interface MenuItemProps {
   onClick: (item: ItemType) => void;
 }
 
+const DEFAULT_MENU_IMAGE = MENULISTPAGE_CONSTANTS.MENUITEMS.IMAGES.NONIMAGE;
+
 const MenuItem = ({ item, onClick }: MenuItemProps) => {
-  const [imgSrc, setImgSrc] = useState(
-    item.imageUrl || MENULISTPAGE_CONSTANTS.MENUITEMS.IMAGES.NONIMAGE,
-  );
+  const [imgSrc, setImgSrc] = useState(item.imageUrl || DEFAULT_MENU_IMAGE);
+  const isDefaultImage = imgSrc === DEFAULT_MENU_IMAGE;
   const price = Number(item?.price ?? 0);
   const isTableFeeAndSoldOut = item.category === 'tableFee' && item.soldOut;
   const isTableFeeAndFree = item.category === 'tableFee' && price === 0;
@@ -57,9 +58,8 @@ const MenuItem = ({ item, onClick }: MenuItemProps) => {
       <S.Row>
         <S.MenuImage
           src={imgSrc}
-          onError={() =>
-            setImgSrc(MENULISTPAGE_CONSTANTS.MENUITEMS.IMAGES.NONIMAGE)
-          }
+          $isDefaultImage={isDefaultImage}
+          onError={() => setImgSrc(DEFAULT_MENU_IMAGE)}
         />
         <S.Col>
           <S.ItemName>{item.name}</S.ItemName>

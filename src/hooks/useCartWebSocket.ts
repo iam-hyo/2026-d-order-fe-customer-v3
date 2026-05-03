@@ -4,6 +4,9 @@ import { useCartSnapshotStore } from "@stores/cartSnapshotStore";
 import { redirectToLoginAfterTableReset } from "@services/tableReEntry";
 
 const AUTH_FAILURE_CLOSE_CODE = 4001;
+const CART_HEARTBEAT_MS = 30_000;
+const CART_RECONNECT_MS = 3_000;
+const MAX_RECONNECT_ATTEMPTS = 5;
 
 function getWsBaseUrl(): string {
   const base = (import.meta.env.VITE_BASE_URL ?? "").replace(/\/+$/, "");
@@ -20,7 +23,10 @@ export function useCartWebSocket(tableUsageId: string | null) {
   const setSnapshot = useCartSnapshotStore((s) => s.setSnapshot);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const reconnectAttempts = useRef(0);
+  /** effect cleanup 시 의도적 close — 재연결 스케줄 방지 */
+  const intentionalCloseRef = useRef(false);
 
   useEffect(() => {
     const raw = tableUsageId?.trim();
@@ -30,8 +36,17 @@ export function useCartWebSocket(tableUsageId: string | null) {
       return;
     }
 
+    intentionalCloseRef.current = false;
+
     const baseUrl = getWsBaseUrl();
     const wsUrl = `${baseUrl}/ws/django/cart/${id}/`;
+
+    const clearHeartbeat = () => {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+    };
 
     const connect = () => {
       const ws = new WebSocket(wsUrl);
@@ -40,11 +55,28 @@ export function useCartWebSocket(tableUsageId: string | null) {
       ws.onopen = () => {
         console.log('[CartWS] ✅ 연결됨:', wsUrl);
         reconnectAttempts.current = 0;
+
+        clearHeartbeat();
+        heartbeatIntervalRef.current = setInterval(() => {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ type: "PING" }));
+          }
+        }, CART_HEARTBEAT_MS);
       };
 
       ws.onmessage = (event: MessageEvent) => {
         try {
-          const payload = JSON.parse(event.data as string) as CartWsPayload;
+          const parsed = JSON.parse(event.data as string) as Record<
+            string,
+            unknown
+          >;
+          const msgType = String(parsed?.type ?? "");
+
+          if (msgType === "PONG") {
+            return;
+          }
+
+          const payload = parsed as unknown as CartWsPayload;
           console.log('[CartWS] 📩 메시지 수신:', {
             type: payload?.type,
             cartStatus: payload?.data?.cart?.status,
@@ -73,19 +105,23 @@ export function useCartWebSocket(tableUsageId: string | null) {
       };
 
       ws.onclose = (e) => {
+        clearHeartbeat();
         console.log('[CartWS] 🔌 연결 종료:', { code: e.code, reason: e.reason });
         wsRef.current = null;
+
+        if (intentionalCloseRef.current) {
+          return;
+        }
+
         if (e.code === AUTH_FAILURE_CLOSE_CODE) {
           console.warn('[CartWS] ⚠️ 인증 실패로 종료 (4001)');
           setSnapshot(null);
           return;
         }
-        // 재연결 (최대 5회, 지수 백오프)
-        const maxAttempts = 5;
-        if (reconnectAttempts.current < maxAttempts) {
-          const delay = Math.min(1000 * 2 ** reconnectAttempts.current, 30000);
+
+        if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
           reconnectAttempts.current += 1;
-          reconnectTimeoutRef.current = setTimeout(connect, delay);
+          reconnectTimeoutRef.current = setTimeout(connect, CART_RECONNECT_MS);
         }
       };
 
@@ -97,6 +133,8 @@ export function useCartWebSocket(tableUsageId: string | null) {
     connect();
 
     return () => {
+      intentionalCloseRef.current = true;
+      clearHeartbeat();
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;

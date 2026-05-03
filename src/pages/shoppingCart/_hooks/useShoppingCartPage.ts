@@ -89,6 +89,7 @@ const useShoppingCartPage = () => {
   const paymentInfoSucceeded = useRef(false);
   /** 새로고침 복원 중복 방지 — pending_payment 진입 시 한 번만 복원 */
   const hasRestoredModal = useRef(false);
+  const prevCartStatusRef = useRef<string>('');
 
   const menusFromSnapshot = useMemo(
     () =>
@@ -138,6 +139,26 @@ const useShoppingCartPage = () => {
       navigate(ROUTE_CONSTANTS.ORDERCOMPLETE);
     }
   }, [cartStatus, navigate]);
+
+  // WS로 결제 대기 해제(CART_PAYMENT_CANCELLED 등) → pending이 아니게 되면 입금 모달 닫기
+  useEffect(() => {
+    const prev = prevCartStatusRef.current;
+    prevCartStatusRef.current = cartStatus;
+
+    if (
+      prev === 'pending_payment' &&
+      cartStatus !== 'pending_payment' &&
+      cartStatus !== ''
+    ) {
+      paymentInfoRequestId.current += 1;
+      paymentInfoInFlight.current = false;
+      paymentInfoSucceeded.current = false;
+      setIsSendMoneyModal(false);
+      setPaymentModalLoading(false);
+      setPaymentModalError(null);
+      setAccountInfo(null);
+    }
+  }, [cartStatus]);
 
   // 새로고침 후 결제 모달 소유권 복원 + 상태 변경 시 소유권 초기화
   useEffect(() => {
@@ -277,8 +298,8 @@ const useShoppingCartPage = () => {
     setPaymentModalError(null);
     setAccountInfo(null);
     // 모달 닫기 = 결제 포기 → 소유권 초기화
-    localStorage.removeItem('paymentOwner');
-    localStorage.removeItem('paymentAccountInfo');
+    sessionStorage.removeItem('paymentOwner');
+    sessionStorage.removeItem('paymentAccountInfo');
     hasRestoredModal.current = false;
 
     // 서버가 이미 pending_payment로 전환했으면 취소 요청 (WS 이벤트 도착 전에도 동작)

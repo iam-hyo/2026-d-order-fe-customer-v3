@@ -29,11 +29,25 @@ export const Row2 = styled.div`
   gap: 0.5rem;
 `;
 
-export const MenuImage = styled.img`
+export const MenuImage = styled.img<{ $isDefaultImage?: boolean }>`
   width: 70px;
-  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
   border-radius: 7px;
   background-color: ${({ theme }) => theme.colors.Gray01};
+
+  ${({ $isDefaultImage }) =>
+    $isDefaultImage
+      ? `
+    aspect-ratio: 1 / 1;
+    height: auto;
+    object-fit: contain;
+    object-position: center;
+  `
+      : `
+    height: 70px;
+    object-fit: cover;
+    object-position: center;
+  `}
 `;
 
 export const Col = styled.div`

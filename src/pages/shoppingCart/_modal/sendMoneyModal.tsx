@@ -134,9 +134,6 @@ const SendMoneyModal = ({
     const startAcceptTimeout = () => {
       if (acceptTimeoutRef.current) return;
       acceptTimeoutRef.current = setTimeout(() => {
-        toast.error(
-          '직원이 아직 응답하지 않았어요. 잠시 후 다시 시도해 주세요.',
-        );
         setStaffcallWaiting(false);
         // 연결은 유지하되, 사용자가 다시 요청할 수 있게 confirm에 남김
         setStep('confirm');
@@ -343,7 +340,10 @@ const SendMoneyModal = ({
               // 요청 중(= 방금 생성한 staff call 구독 중)에는 staff call 자체 삭제
               if (staffcallWaiting && staffCallId && subscribeToken) {
                 try {
-                  await cartApiV3.deleteStaffCall({ staffCallId, subscribeToken });
+                  await cartApiV3.deleteStaffCall({
+                    staffCallId,
+                    subscribeToken,
+                  });
                   orangeToastSuccess('호출을 취소했습니다.');
                 } catch (e: unknown) {
                   const msg =
