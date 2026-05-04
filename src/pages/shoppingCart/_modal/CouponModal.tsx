@@ -31,12 +31,12 @@ const CouponModal = ({
   setCouponType,
   couponType,
 }: CouponModalProps) => {
-  const [couponError, setCouponError] = useState(false);
+  const [couponError, setCouponError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleApply = async () => {
     if (!couponCode.trim()) return;
-    setCouponError(false);
+    setCouponError('');
 
     try {
       if (appliedCoupon) return;
@@ -49,11 +49,17 @@ const CouponModal = ({
       setUsingCoupon(couponCode);
       setCouponType(String(payload?.data?.discount_type ?? ''));
       setCouponCode('');
-      setCouponError(false);
+      setCouponError('');
       onClose();
-    } catch {
-      setCouponError(true);
-      toast.error('해당 번호의 쿠폰이 존재하지 않아요!', {
+    } catch (error) {
+      const err = error as Error & { status?: number; errorCode?: string };
+      const msg = err.message || '유효하지 않은 쿠폰 번호입니다.';
+      const TOAST_ONLY_CODES = ['COUPON_CODE_IN_USE', 'COUPON_ALREADY_APPLIED', 'CART_NOT_ACTIVE'];
+      const isToastOnly = err.errorCode
+        ? TOAST_ONLY_CODES.includes(err.errorCode)
+        : err.status === 409;
+      if (!isToastOnly) setCouponError(msg);
+      toast.error(msg, {
         icon: <img src={IMAGE_CONSTANTS.CHECK} alt="" />,
         closeButton: false,
         style: {
@@ -73,7 +79,7 @@ const CouponModal = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCouponCode(e.target.value);
-    if (couponError) setCouponError(false);
+    if (couponError) setCouponError('');
   };
 
   const isDisabled = couponCode === '' || appliedCoupon;
@@ -92,9 +98,9 @@ const CouponModal = ({
             onChange={handleInputChange}
             placeholder="쿠폰 번호 입력"
             disabled={appliedCoupon}
-            $hasError={couponError}
+            $hasError={!!couponError}
           />
-          {couponError && <ErrorText>유효하지 않은 쿠폰 번호입니다.</ErrorText>}
+          {couponError && <ErrorText>{couponError}</ErrorText>}
         </InputContainer>
         {appliedCoupon && (
           <CouponContainer>

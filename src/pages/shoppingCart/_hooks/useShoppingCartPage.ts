@@ -335,9 +335,19 @@ const useShoppingCartPage = () => {
       // 쿠폰 적용/가격 반영은 WS 스냅샷 기준으로만 처리한다.
       return res;
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message;
-      throw new Error(msg || '해당 번호의 쿠폰이 존재하지 않아요!');
+      const axiosErr = err as {
+        response?: { status?: number; data?: { message?: string; data?: { error_code?: string } } };
+      };
+      const status = axiosErr?.response?.status;
+      const msg = axiosErr?.response?.data?.message;
+      const errorCode = axiosErr?.response?.data?.data?.error_code;
+      const error = new Error(msg || '유효하지 않은 쿠폰입니다.') as Error & {
+        status?: number;
+        errorCode?: string;
+      };
+      error.status = status;
+      error.errorCode = errorCode;
+      throw error;
     }
   };
 
