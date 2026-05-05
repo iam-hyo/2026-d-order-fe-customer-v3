@@ -3,7 +3,8 @@ import styled from 'styled-components';
 export const Wrapper = styled.div`
   min-height: calc(var(--vh, 1vh) * 100);
 `;
-//for OrderListHeader
+
+// for OrderListHeader
 export const Header = styled.header`
   box-sizing: border-box;
   padding: 2rem 1.25rem;
@@ -11,9 +12,11 @@ export const Header = styled.header`
   display: flex;
   justify-content: space-between;
   width: 100%;
+
   button {
     padding: 0;
   }
+
   div {
     ${({ theme }) => theme.fonts.ExtraBold18};
   }
@@ -32,6 +35,7 @@ export const TotalPrice = styled.p`
   color: ${({ theme }) => theme.colors.Black01};
   ${({ theme }) => theme.fonts.Bold16}
 `;
+
 export const PriceText = styled.p`
   color: ${({ theme }) => theme.colors.Orange01};
   ${({ theme }) => theme.fonts.ExtraBold16}
@@ -54,11 +58,20 @@ export const ImageWrapper = styled.div`
   height: 4.3rem;
   border-radius: 0.5rem;
   background-color: ${({ theme }) => theme.colors.Gray01};
+
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-shrink: 0;
+
   img {
-    width: 4.3rem;
+    max-width: 4.3rem;
+    border-radius: 0.5rem;
+    object-fit: cover;
+  }
+
+  svg {
+    max-width: 4.3rem;
     height: 4.3rem;
     border-radius: 0.5rem;
   }
@@ -67,6 +80,7 @@ export const ImageWrapper = styled.div`
 export const ContentContainer = styled.div`
   width: 100%;
   height: 100%;
+
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -107,19 +121,21 @@ export const AmountWrapper = styled.p`
 `;
 
 // for OrderListPage
-
 export const HeaderWrapper = styled.div`
   width: 100%;
   height: fit-content;
   box-shadow: 0px 4px 4px 0px #00000005;
 `;
+
 export const PageWrapper = styled.div`
   width: 100%;
   height: fit-content;
+
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
+
   box-sizing: border-box;
   padding: 0 1rem 1rem;
 `;
@@ -127,4 +143,46 @@ export const PageWrapper = styled.div`
 export const OrderListWrapper = styled.div`
   width: 100%;
   box-sizing: border-box;
+`;
+
+// for Order Group
+export const OrderGroupSection = styled.section`
+  width: 100%;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  padding-top: 1.5rem;
+`;
+
+export const OrderGroupHeader = styled.div`
+  width: 100%;
+  box-sizing: border-box;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+export const OrderGroupTitle = styled.p`
+  ${({ theme }) => theme.fonts.Bold16};
+  color: ${({ theme }) => theme.colors.Black01};
+`;
+
+export const OrderGroupTime = styled.p`
+  ${({ theme }) => theme.fonts.Bold14};
+  color: ${({ theme }) => theme.colors.Gray02};
+`;
+
+export const OrderGroupItemList = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+`;
+
+export const OrderGroupDivider = styled.img`
+  width: 100%;
+  display: block;
+  margin-top: 1.2rem;
 `;
