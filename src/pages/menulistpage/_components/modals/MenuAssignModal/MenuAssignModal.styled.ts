@@ -3,14 +3,14 @@ import styled, { keyframes, css } from 'styled-components';
 const slideDown = keyframes`
   0% {
     opacity: 0;
-    transform: translateY(-40px);
+    transform: translate(-50%, -40px);
   }
   60% {
     opacity: 1;
-    transform: translateY(8px);
+    transform: translate(-50%, 8px);
   }
   100% {
-    transform: translateY(0px);
+    transform: translate(-50%, 0px);
   }
 `;
 
@@ -192,7 +192,8 @@ export const Toast = styled.div`
   transform: translate(-50%, 0);
   width: calc(100% - 4.5rem);
   max-width: calc(540px - 4.5rem);
-  z-index: 3;
+  /* 모달(및 상단 헤더) 위에 보이도록 */
+  z-index: 20;
   background-color: ${({ theme }) => theme.colors.Orange01};
   padding: 1rem;
   border-radius: 8px;

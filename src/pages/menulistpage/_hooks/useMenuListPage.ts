@@ -103,6 +103,8 @@ const useMenuListPage = () => {
   const [count, setCount] = useState(1);
   const [showToast, setShowToast] = useState(false);
   const [pendingToast, setPendingToast] = useState(false);
+  /** POST /cart/ 4xx 등 담기 실패 시 메뉴 모달 상단 토스트 */
+  const [errorToast, setErrorToast] = useState<string | null>(null);
 
   const resetCount = () => setCount(1);
   const isMin = count <= 1;
@@ -265,6 +267,12 @@ const useMenuListPage = () => {
     }
   }, [pendingToast]);
 
+  useEffect(() => {
+    if (!errorToast) return undefined;
+    const timeout = setTimeout(() => setErrorToast(null), 2800);
+    return () => clearTimeout(timeout);
+  }, [errorToast]);
+
   const handleScrollTo = (category: 'tableFee' | 'set' | 'menu' | 'drink') => {
     setSelectedCategory(category);
     const target = sectionRefs[category].current;
@@ -312,12 +320,11 @@ const useMenuListPage = () => {
     if (item.category === 'tableFee' && Number(item?.price ?? 0) === 0) return;
     const alreadyInCart = cartQtyForItem(snapshot?.items, item);
     if (alreadyInCart >= Number(item.quantity ?? 0)) return;
+    setErrorToast(null);
     setSelectedItem(item);
     resetCount();
     setIsModalOpen(true);
   };
-
-  const [errorToast, setErrorToast] = useState<string | null>(null);
 
   const handleSubmitItem = async () => {
     if (!selectedItem) return;
@@ -359,8 +366,15 @@ const useMenuListPage = () => {
       }, 300);
     } catch (e: any) {
       console.error(e);
+      const body = e?.response?.data as
+        | { message?: string; data?: { detail?: string } }
+        | undefined;
+      const apiMsg =
+        (typeof body?.message === 'string' && body.message.trim()) ||
+        (typeof body?.data?.detail === 'string' && body.data.detail.trim()) ||
+        '';
       setErrorToast(
-        e?.response?.data?.message ||
+        apiMsg ||
           '장바구니 담기 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.',
       );
     } finally {
@@ -370,6 +384,7 @@ const useMenuListPage = () => {
   const handleFirstModal = () => {
     setIsModalOpen(false);
     setSelectedItem(null);
+    setErrorToast(null);
   };
 
   const handleSecondModal = () => {

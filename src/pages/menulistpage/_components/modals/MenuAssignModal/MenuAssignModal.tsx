@@ -20,6 +20,8 @@ interface MenuAssignModalProps {
   isMax: boolean;
   showToast: boolean;
   pendingToast?: boolean;
+  /** 장바구니 POST 등 API 오류 메시지 (토스트) */
+  cartApiError?: string | null;
   isCartPending?: boolean;
   onDecrease: () => void;
   onIncrease: () => void;
@@ -35,6 +37,7 @@ const MenuAssignModal = ({
   isMax,
   showToast,
   pendingToast,
+  cartApiError,
   isCartPending,
   onDecrease,
   onIncrease,
@@ -112,6 +115,12 @@ const MenuAssignModal = ({
           다른 사용자가 결제 중입니다.
         </S.Toast>
       )}
+      {cartApiError ? (
+        <S.Toast>
+          <S.ToastIcon src={MENULISTPAGE_CONSTANTS.ASSIGNMODAL.IMAGES.NOTICE} />
+          {cartApiError}
+        </S.Toast>
+      ) : null}
     </S.Wrapper>
   );
 };

@@ -41,6 +41,7 @@ const MenulistPage = () => {
     handleIncrease,
     handleDecrease,
     pendingToast,
+    errorToast,
     isCartPending,
   } = useMenuListPage();
 
@@ -81,6 +82,7 @@ const MenulistPage = () => {
           isMax={isMax}
           showToast={showToast}
           pendingToast={pendingToast}
+          cartApiError={errorToast}
           isCartPending={isCartPending}
           onIncrease={handleIncrease}
           onDecrease={handleDecrease}
