@@ -36,7 +36,7 @@ interface TotalAccount {
 
 type Step = 'account' | 'confirm' | 'staffComing';
 
-const STAFFCALL_ACCEPT_TIMEOUT_MS = 90_000;
+const STAFFCALL_ACCEPT_TIMEOUT_MS = 60 * 60 * 1000;
 const STAFFCALL_HEARTBEAT_MS = 30_000;
 const STAFFCALL_RECONNECT_MS = 3_000;
 const STAFFCALL_MAX_RECONNECT_ATTEMPTS = 5;
