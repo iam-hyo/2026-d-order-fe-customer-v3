@@ -1,22 +1,32 @@
-import React from "react";
-import * as S from "../devPage.styled";
+import React from 'react';
+import * as S from '../devPage.styled';
+
+export type DevRole = 'All' | 'PM' | 'EX' | 'Front-End' | 'Back-End';
+
+const ROLES: DevRole[] = ['All', 'PM', 'Front-End', 'Back-End', 'EX' ];
 
 type Props = {
-  active: "ALL" | "PM" | "FE" | "BE" | "COOP";
-  onChange: (next: Props["active"]) => void;
+  active: DevRole;
+  onChange: (next: DevRole) => void;
 };
 
 const RoleFilter: React.FC<Props> = ({ active, onChange }) => {
-    const roles = ["ALL", "PM", "FE", "BE", "COOP"] as const;
-    return (
-        <S.FilterBox>
-        {roles.map((r) => (
-            <S.FilterBtn key={r} active={active === r} onClick={() => onChange(r)}>
-            {r === "ALL" ? "전체" : r}
-            </S.FilterBtn>
-        ))}
-        </S.FilterBox>
-    );
+  return (
+    <S.FilterBox role="tablist" aria-label="Developer role filter">
+      {ROLES.map((role) => (
+        <S.FilterBtn
+          key={role}
+          type="button"
+          role="tab"
+          aria-selected={active === role}
+          $active={active === role}
+          onClick={() => onChange(role)}
+        >
+          {role}
+        </S.FilterBtn>
+      ))}
+    </S.FilterBox>
+  );
 };
 
 export default RoleFilter;

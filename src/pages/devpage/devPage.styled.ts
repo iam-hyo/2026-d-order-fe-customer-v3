@@ -1,195 +1,226 @@
-import styled, { css } from "styled-components";
+import styled, { css, keyframes } from 'styled-components';
 
-/** 팔레트(요청 색상) */
-const roleHex = {
-  pm: "#E9B3FB",
-  fe: "#647FBC",
-  be: "#EF7722",
-  coop: "#F85081",
-} as const;
+const floatIn = keyframes`
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.82) rotate(-1.5deg);
+  }
+  68% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.035) rotate(0.4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+`;
 
+const floatOut = keyframes`
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(18px) scale(0.9) rotate(1deg);
+  }
+`;
 
+const shine = keyframes`
+  0% {
+    transform: translateX(-145%) skewX(-18deg);
+    opacity: 0;
+  }
+  24% {
+    opacity: 0.55;
+  }
+  72% {
+    opacity: 0.25;
+  }
+  100% {
+    transform: translateX(145%) skewX(-18deg);
+    opacity: 0;
+  }
+`;
 
 export const PageWrap = styled.div`
-  position: relative;                 /* 전역 레이어 기준점 */
   width: 100%;
   max-width: 720px;
+  min-height: 100vh;
   margin: 0 auto;
-  padding: 16px 18px 64px;
+  padding: 16px 18px 40px;
   box-sizing: border-box;
+  background: ${({ theme }) => theme.colors.Bg};
 `;
 
 export const Header = styled.header`
   display: flex;
-  justify-content: flex-start;
   align-items: center;
-  gap: 0.2rem;
-  ${({ theme }) => css(theme.fonts.ExtraBold20)};
-  margin-bottom: 12px;
+  gap: 0.4rem;
+  margin-bottom: 16px;
   color: ${({ theme }) => theme.colors.Orange01};
 
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  img {
+    width: 24px;
+    height: 24px;
+  }
+
+  p {
+    margin: 0;
+    ${({ theme }) => css(theme.fonts.ExtraBold20)};
+  }
 `;
 
 export const Toolbar = styled.div`
-  display: flex; 
-  justify-content: center;
-  gap: 0.6rem; margin-bottom: 12px; flex-wrap: wrap;
+  margin-bottom: 22px;
+  overflow: visible;
+`;
+
+export const FilterBox = styled.div`
+  display: flex;
+  gap: clamp(3px, 1.1vw, 8px);
+  width: 100%;
+  overflow: visible;
+  padding: 4px 0 10px;
+`;
+
+export const FilterBtn = styled.button<{ $active?: boolean }>`
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 clamp(3px, 1.5vw, 10px);
+  border: 1px solid ${({ $active}) => ($active ? "#FF8E69" : 'rgba(65, 65, 65, 0.16)')};
+  border-radius: 999px;
+  background: ${({ $active, theme }) => ($active ? "#FF8E69" : theme.colors.White)};
+  color: ${({ $active, theme }) => ($active ? theme.colors.White : theme.colors.Black02)};
+  ${({ theme }) => css(theme.fonts.Bold14)};
+  font-size: clamp(10px, 2.6vw, 14px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  box-shadow: ${({ $active }) => ($active ? '0 8px 18px rgba(255, 110, 63, 0.24)' : 'none')};
+  transform: translateY(${({ $active }) => ($active ? '-1px' : '0')});
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    color 0.22s ease,
+    transform 0.22s ease;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.Orange02};
+    color: ${({ $active, theme }) => ($active ? theme.colors.White : theme.colors.Orange01)};
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.98);
+  }
 `;
 
 export const Grid = styled.div`
   display: grid;
-  gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-`;
-export const GridCol = styled.div``;
-
-export const Empty = styled.div`
-  padding: 20px 12px; text-align: center;
-  border: 1px dashed ${({ theme }) => theme.colors.Black02};
-  border-radius: 12px; ${({ theme }) => css(theme.fonts.Medium14)};
-  color: ${({ theme }) => theme.colors.Black02};
+  gap: 12px;
 `;
 
-export const EggBar = styled.div`
-  position: sticky; bottom: 16px; margin-top: 16px; display: flex; justify-content: center;
-  button{
-    background: #FFF0EC; 
-    color:#FF6E3F; 
-    border:none; 
-    border-radius:999px;
-    padding: 10px 14px; ${({ theme }) => css(theme.fonts.Bold14)};
-    box-shadow: 0 8px 20px rgba(0,0,0,.12);
-    transition: transform .15s ease; &:active{ transform: translateY(1px); }
-  }
-`;
-
-/** 카드 (모바일 간소화) */
-export const CardBox = styled.div`
-  position: relative;                 /* 카드 레이어 기준점 */
-  background: #fff;
-  border: 1px solid ${({ theme }) => theme.colors.Black02};
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0,0,0,.06);
-`;
-
-/** 배너: 역할별 배경 이미지 */
-export const CardHeader = styled.div<{ $bg?: string }>`
-  position: relative;
-  height: 140px;
-  background-image: ${({ $bg }) => ($bg ? `url(${$bg})` : "none")};
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-`;
-
-export const Row = styled.div`
-  display: flex;
-  justify-content: flex-start;
-  gap: 0.6rem;
-`;
-/** 아바타 */
-export const Avatar = styled.img`
-  width: 88px; 
-  height: 88px; 
-  object-fit: cover;
-  border-radius: 999px; 
-  position: relative; 
-  margin-left: 12px; 
-  margin-top: -44px;
-`;
-
-/** 본문 */
-export const CardBody = styled.div`
-  padding: 8px 1.2rem 6px;
-  .name { ${({ theme }) => css(theme.fonts.Bold18)}; }
-  .meta { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
-`;
-
-/** 칩: 역할(컬러) + 메타(전공/인스타) */
-export const Chip = styled.span<{ tone?: "fe"|"be"|"pm"|"coop"|"meta" }>`
-  display:inline-flex; align-items:center; padding:4px 8px; border-radius:999px;
-  ${({ theme }) => css(theme.fonts.Medium12)};
-  border: 1px solid ${({ theme }) => theme.colors.Black02};
-  background:#fff; color:${({ theme }) => theme.colors.Black02};
-
-  ${({ tone }) => tone && tone !== "meta" && css`
-    border-color: ${roleHex[tone as "fe"|"be"|"pm"|"coop"]};
-    color: ${roleHex[tone as "fe"|"be"|"pm"|"coop"]};
-    background: ${roleHex[tone as "fe"|"be"|"pm"|"coop"]}14; /* 8% */
-  `}
-
-  ${({ tone }) => tone === "meta" && css`
-    border-color: #E0E3E7;
-    background: #F6F7F9;
-    color: #3B3F45;
-  `}
-`;
-
-export const CardFooter = styled.div`
-  padding: 10px 12px 14px; display:flex; justify-content:flex-end;
-  button{
-    border: 1px solid ${({ theme }) => theme.colors.Black02};
-    background:#fff; border-radius:12px; padding:8px 12px;
-    ${({ theme }) => css(theme.fonts.Medium12)};
-    transition: transform .12s ease, border-color .15s ease;
-    &:active{ transform: translateY(1px); }
-    &:hover{ border-color: ${roleHex.coop}; }
-  }
-`;
-
-/** 필터 */
-export const FilterBox = styled.div`
-  display:flex; gap:6px; flex-wrap:wrap;
-`;
-export const FilterBtn = styled.button<{ active?: boolean }>`
-  border: 1px solid ${({ theme }) => theme.colors.Orange02};
-  border-radius: 999px;
-  background: ${({ active }) => (active ? "#FFF0EC" : "#fff")};
-  color: ${({ active }) => (active ? "#FF6E3F" : "inherit")};
-  padding: 8px 12px; ${({ theme }) => css(theme.fonts.Medium14)};
-  transition: background .15s ease, color .15s ease, border-color .15s ease;
-`;
-
-export const GlobalFireworksLayer = styled.div`
-  pointer-events: none;
-  position: absolute;
-  inset: 0;                           /* PageWrap 내부 100% */
-  z-index: 20;
-  overflow: hidden;
-`;
-/** 카드 Lottie 레이어: 카드 박스 내부 */
-export const CardFireworksLayer = styled.div`
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  overflow: hidden;
-`;
-/** 콘페티 */
-export const ConfettiLayer = styled.div`
-  pointer-events: none;
-  position: absolute;  /* ✅ absolute로 부모(PageWrap) 안에만 */
-  inset: 0;            /* top/right/bottom/left = 0 */
+export const ImageCard = styled.button`
+  display: block;
   width: 100%;
-  height: 100%;
+  padding: 0;
   overflow: hidden;
-  z-index: 999;        /* 페이지 최상단 레벨 (필요시 조정) */
-`;
-export const CardConfettiLayer = styled.div`
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  z-index: 5;          /* 카드 콘텐츠 위에 오도록 */
-`;
-export const ConfettiPiece = styled.span<{ x:number; d:number }>`
-  position: absolute;
-  left: ${p=>p.x}%;
-  top: -10px;
-  font-size: 18px;
-  animation: drop ${p=>p.d}ms linear forwards;
-  @keyframes drop {
-    to { transform: translateY(110%) rotate(720deg); opacity: .9; }
+  // border: 1px solid rgba(65, 65, 65, 0.12);
+  border-radius: 26px;
+  // background: ${({ theme }) => theme.colors.Bg};
+  background: #FAFAFA;
+
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.055);
+  cursor: pointer;
+  transition:
+    // border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+
+  &:hover {
+    border-color: rgba(255, 110, 63, 0.36);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.09);
+    transform: translateY(-2px);
   }
+
+  &:active {
+    transform: translateY(0) scale(0.985);
+  }
+`;
+
+export const DeveloperImage = styled.img`
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  object-fit: contain;
+`;
+
+export const FloatingOverlay = styled.div<{ $closing?: boolean }>`
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  border: 0;
+  background: rgba(0, 0, 0, ${({ $closing }) => ($closing ? 0 : 0.58)});
+  cursor: pointer;
+  opacity: ${({ $closing }) => ($closing ? 0 : 1)};
+  transition:
+    background 0.22s ease,
+    opacity 0.22s ease;
+`;
+
+export const FloatingCard = styled.div<{ $closing?: boolean }>`
+  position: relative;
+  width: min(84vw, 390px);
+  max-height: 82vh;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 42px;
+  // background: ${({ theme }) => theme.colors.White};
+  // box-shadow:
+  //   0 26px 70px rgba(0, 0, 0, 0.34);
+  //   // 0 0 0 1px rgba(255, 255, 255, 0.5);
+  cursor: default;
+  animation: ${({ $closing }) => ($closing ? floatOut : floatIn)} ${({ $closing }) => ($closing ? '0.2s' : '0.42s')}
+    cubic-bezier(0.2, 0.82, 0.24, 1) forwards;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: 0;
+    width: 44%;
+    height: 140%;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.54), transparent);
+    animation: ${shine} 0.72s ease 0.08s both;
+  }
+`;
+
+export const FloatingImage = styled.img`
+  display: block;
+  width: 100%;
+  max-height: 82vh;
+  object-fit: contain;
 `;

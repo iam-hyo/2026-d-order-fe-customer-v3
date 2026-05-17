@@ -1,173 +1,121 @@
-import React, { useMemo, useState } from 'react';
-import * as S from './devPage.styled';
-import DevCard, { Member } from './components/devCard';
-import RoleFilter from './components/roleFilter';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ROUTE_CONSTANTS } from '@constants/RouteConstants';
-
-// 프로필 이미지 정의
-import KGW from '@assets/images/KGW.png';
-import HCM from '@assets/images/HCM.png';
-import JHJ from '@assets/images/JHJ.png';
-import KGM from '@assets/images/KGM.png';
-import LDG from '@assets/images/LDG.png';
-import LSB from '@assets/images/LSB.png';
-import OTJ from '@assets/images/OTJ.png';
-import PSJ from '@assets/images/PSJ.png';
-import PSW from '@assets/images/PSW.png';
-import LHW from '@assets/images/LHW.png';
 import { IMAGE_CONSTANTS } from '@constants/ImageConstants';
+import { ROUTE_CONSTANTS } from '@constants/RouteConstants';
+import DevCard from './components/devCard';
+import RoleFilter, { DevRole } from './components/roleFilter';
+import * as S from './devPage.styled';
 
-const PMs: Member[] = [
-  {
-    name: '김강민',
-    image: KGM,
-    role: 'PM',
-    major: '산업시스템공학과',
-    instagram: 'smile.kmk',
-  },
-];
+const DEV_IMAGES = {
+  LDG: '/images/donggeonLee.svg',
+  CEH: '/images/eunhoCha.svg',
+  KGW: '/images/geunwooKang.svg',
+  JHJ: '/images/hyojunJeon.svg',
+  LHW: '/images/hyunwooLim.svg',
+  PJH: '/images/jinheePark.svg',
+  LSB: '/images/soobinLim.svg',
+  JSW: '/images/sunwooJang.svg',
+  PSW: '/images/sunwooPark.svg',
+  OTJ: '/images/taehunOh.svg',
+  SYC: '/images/youngchaeSon.svg',
+} as const;
 
-const FEs: Member[] = [
-  {
-    name: '이동건',
-    image: LDG,
-    role: 'FE',
-    major: '컴퓨터공학전공',
-    instagram: '11d_g20',
-  },
-  {
-    name: '강근우',
-    image: KGW,
-    role: 'FE',
-    major: '컴퓨터공학잔공',
-    instagram: 'gn00py48',
-  },
-  {
-    name: '박성재',
-    image: PSJ,
-    role: 'FE',
-    major: '정보통신공학과',
-    instagram: 'sjae_o',
-  },
-  {
-    name: '오태준',
-    image: OTJ,
-    role: 'FE',
-    major: '정보통신공학과',
-    instagram: 'taejun_0',
-  },
-];
+type DevImageKey = keyof typeof DEV_IMAGES;
 
-const BEs: Member[] = [
-  {
-    name: '박선우',
-    image: PSW,
-    role: 'BE',
-    major: '컴퓨터공학전공',
-    instagram: 'sunnraiin',
-  },
-  {
-    name: '임수빈',
-    image: LSB,
-    role: 'BE',
-    major: '화공생물공학과',
-    instagram: 'so_ob452',
-  },
-  {
-    name: '임현우',
-    image: LHW,
-    role: 'BE',
-    major: '정보통신공학과',
-    instagram: 'ooh._.99',
-  },
-];
+type SelectedImage = {
+  src: string;
+  alt: string;
+};
 
-const COOPs: Member[] = [
-  {
-    name: '하채민',
-    image: HCM,
-    role: 'COOP',
-    major: '전기전자공학부',
-    instagram: 'hachaennin',
-  },
-  {
-    name: '전효준',
-    image: JHJ,
-    role: 'COOP',
-    major: '산업시스템공학과',
-    instagram: 'im_hyo125',
-  },
-];
+const DEV_GROUPS: Record<Exclude<DevRole, 'All'>, DevImageKey[]> = {
+  'PM': ['PJH', 'JSW', 'SYC'],
+  'EX': ['PJH', 'JSW', 'SYC', 'LHW', 'JHJ'],
+  'Front-End': ['KGW', 'LDG', 'OTJ'],
+  'Back-End': ['KGW', 'LDG', 'OTJ', 'CEH', 'LSB', 'PSW'],
+};
 
-const ALL: Member[] = [...PMs, ...FEs, ...BEs, ...COOPs];
+const ALL_IMAGES = Array.from(new Set(Object.values(DEV_GROUPS).flat()));
+
+const getImagesByRole = (role: DevRole): DevImageKey[] => {
+  return role === 'All' ? ALL_IMAGES : DEV_GROUPS[role];
+};
 
 const DevPage: React.FC = () => {
-  const [role, setRole] = useState<'ALL' | 'PM' | 'FE' | 'BE' | 'COOP'>('ALL');
-
-  // ✅ 전체 칭찬하기 트리거 키 (증가할 때마다 자식이 받아서 폭죽 실행)
-  const [burstKey, setBurstKey] = useState(0);
-
-  // (선택) 페이지 전체 Lottie 오버레이를 같이 쓰고 싶다면 true/false로 관리
-  // import Lottie/fireWork + 스타일 준비되어 있으면 활성화
-  // const [globalFx, setGlobalFx] = useState(false);
-
   const navigate = useNavigate();
-  const list = useMemo(() => {
-    return role === 'ALL'
-      ? ALL
-      : role === 'PM'
-        ? PMs
-        : role === 'FE'
-          ? FEs
-          : role === 'BE'
-            ? BEs
-            : COOPs;
-  }, [role]);
+  const [role, setRole] = useState<DevRole>('All');
+  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
 
-  const fireAll = () => {
-    setBurstKey((k) => k + 1); // ✅ 모든 카드에 신호 전달
-    // setGlobalFx(true);            // (선택) 전역 오버레이도 함께 보이게
-    // setTimeout(() => setGlobalFx(false), 1800);
+  const selectedImages = useMemo(() => getImagesByRole(role), [role]);
+
+  const openFloatingCard = (imageKey: DevImageKey) => {
+    setIsClosing(false);
+    setSelectedImage({
+      src: DEV_IMAGES[imageKey],
+      alt: `${role} ${imageKey}`,
+    });
   };
+
+  const closeFloatingCard = () => {
+    if (!selectedImage || isClosing) return;
+
+    setIsClosing(true);
+    window.setTimeout(() => {
+      setSelectedImage(null);
+      setIsClosing(false);
+    }, 220);
+  };
+
+  useEffect(() => {
+    if (!selectedImage) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeFloatingCard();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImage, isClosing]);
 
   return (
     <S.PageWrap>
-      {/* (선택) 전역 오버레이를 쓰려면 아래 주석 해제
-      {globalFx && (
-        <S.GlobalFireworksLayer>
-          <Lottie animationData={fireWork} loop={true} style={{ width: "100%", height: "100%" }} />
-        </S.GlobalFireworksLayer>
-      )} */}
-
       <S.Header>
-        <img
-          onClick={() => navigate(ROUTE_CONSTANTS.MENULIST)}
-          src={IMAGE_CONSTANTS.BACKICON}
-          alt="뒤로가기"
-          style={{ cursor: 'pointer' }}
-        />
+        <button type="button" onClick={() => navigate(ROUTE_CONSTANTS.MENULIST)} aria-label="Go back">
+          <img src={IMAGE_CONSTANTS.BACKICON} alt="" />
+        </button>
         <p>Team D-Order</p>
       </S.Header>
 
       <S.Toolbar>
-        <RoleFilter active={role} onChange={(r) => setRole(r as any)} />
+        <RoleFilter active={role} onChange={setRole} />
       </S.Toolbar>
 
       <S.Grid>
-        {list.map((m) => (
-          <S.GridCol key={m.name}>
-            {/* ✅ burstKey를 내려주면 전체 칭찬하기 시 각 카드가 동시에 폭죽 */}
-            <DevCard member={m} burstKey={burstKey} />
-          </S.GridCol>
+        {selectedImages.map((imageKey) => (
+          <DevCard
+            key={imageKey}
+            src={DEV_IMAGES[imageKey]}
+            alt={`${role} ${imageKey}`}
+            onClick={() => openFloatingCard(imageKey)}
+          />
         ))}
       </S.Grid>
 
-      <S.EggBar>
-        <button onClick={fireAll} title="모두 수고했어요!">
-          모두 칭찬하기 🎊
-        </button>
-      </S.EggBar>
+      {selectedImage && (
+        <S.FloatingOverlay
+          role="button"
+          tabIndex={-1}
+          aria-label="Close enlarged image"
+          $closing={isClosing}
+          onClick={closeFloatingCard}
+        >
+          <S.FloatingCard $closing={isClosing} onClick={(event) => event.stopPropagation()}>
+            <S.FloatingImage src={selectedImage.src} alt={selectedImage.alt} />
+          </S.FloatingCard>
+        </S.FloatingOverlay>
+      )}
     </S.PageWrap>
   );
 };
