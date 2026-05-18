@@ -74,7 +74,7 @@ const useMenuListPageWithDummy = () => {
   useEffect(() => {
     const initCartState = async () => {
       try {
-        const cartId = localStorage.getItem('cartId');
+        const cartId = sessionStorage.getItem('cartId');
         if (!cartId) return;
         const cartNumber = parseInt(cartId, 10);
         if (Number.isNaN(cartNumber)) return;
@@ -93,7 +93,7 @@ const useMenuListPageWithDummy = () => {
     const fetchData = () => {
       setIsLoading(true);
       try {
-        const tableId = localStorage.getItem('tableNum');
+        const tableId = sessionStorage.getItem('tableNum');
         const parsed = tableId ? parseInt(tableId, 10) : NaN;
         const tableNumber = Number.isNaN(parsed) ? null : parsed;
         // 더미: 테이블 번호 없어도 헤더(카테고리 탭) 노출을 위해 기본값 1 사용

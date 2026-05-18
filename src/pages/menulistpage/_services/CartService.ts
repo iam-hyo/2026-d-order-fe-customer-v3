@@ -6,15 +6,15 @@ type CartType = "menu" | "set_menu" | "seat_fee";
 const CART_ID_KEY = "cartId";
 
 function getCartId(): number | null {
-  const v = localStorage.getItem(CART_ID_KEY);
+  const v = sessionStorage.getItem(CART_ID_KEY);
 
   const n = v ? Number(v) : NaN;
   return Number.isFinite(n) ? n : null;
 }
 
 function setCartId(id: number | null) {
-  if (id == null) localStorage.removeItem(CART_ID_KEY);
-  else localStorage.setItem(CART_ID_KEY, String(id));
+  if (id == null) sessionStorage.removeItem(CART_ID_KEY);
+  else sessionStorage.setItem(CART_ID_KEY, String(id));
 }
 
 export const CartService = {
@@ -29,7 +29,7 @@ export const CartService = {
     id?: number;
     quantity: number;
   }) => {
-    const boothId = localStorage.getItem("boothId");
+    const boothId = sessionStorage.getItem("boothId");
     const cartId = getCartId();
 
     const body: any = {
@@ -53,7 +53,7 @@ export const CartService = {
   },
 
   exists: async (cartId: number): Promise<boolean> => {
-    const boothId = localStorage.getItem("boothId");
+    const boothId = sessionStorage.getItem("boothId");
     const res = await instance.get(`/api/v2/cart/exists/?cartId=${cartId}`, {
       headers: { "Booth-ID": boothId },
     });

@@ -24,7 +24,7 @@ export const useLogin = (boothId: string | null) => {
     );
 
     try {
-      const storedBoothId = localStorage.getItem("boothId") || boothId;
+      const storedBoothId = sessionStorage.getItem("boothId") || boothId;
       if (!storedBoothId) {
         throw new Error("부스 ID가 없습니다.");
       }
@@ -34,9 +34,9 @@ export const useLogin = (boothId: string | null) => {
 
       // v3 성공 시 200 + message, data 반환
       if (body?.data?.table_num != null) {
-        localStorage.setItem("tableNum", String(body.data.table_num));
+        sessionStorage.setItem("tableNum", String(body.data.table_num));
         if (typeof body?.data?.table_usage_id === "number") {
-          localStorage.setItem("tableUsageId", String(body.data.table_usage_id));
+          sessionStorage.setItem("tableUsageId", String(body.data.table_usage_id));
         }
         // 로그인 성공 시 응답 헤더에 booth_id가 있으면 저장 (이후 API에서 헤더로 사용)
         const headerBoothId =
@@ -44,7 +44,7 @@ export const useLogin = (boothId: string | null) => {
           response.headers["booth-id"] ??
           response.headers["Booth-ID"];
         if (headerBoothId) {
-          localStorage.setItem(
+          sessionStorage.setItem(
             "boothId",
             typeof headerBoothId === "string" ? headerBoothId : String(headerBoothId)
           );

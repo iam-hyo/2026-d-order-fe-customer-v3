@@ -38,7 +38,7 @@ export const useStaffCodeVerification = (options?: Options) => {
 
       if (ok) {
         verifiedRef.current = true;
-        localStorage.removeItem("cartId");
+        sessionStorage.removeItem("cartId");
         navigate(ROUTE_CONSTANTS.ORDERCOMPLETE);
       } else {
         setShowError(true);

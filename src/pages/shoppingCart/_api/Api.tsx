@@ -5,7 +5,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
-const booth_id = localStorage.getItem("boothId");
+const booth_id = sessionStorage.getItem("boothId");
 export const ApiShopping: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL,
   headers: {
@@ -15,8 +15,8 @@ export const ApiShopping: AxiosInstance = axios.create({
 
 ApiShopping.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const boothId = localStorage.getItem("boothId");
-    const tableNum = localStorage.getItem("tableNum");
+    const boothId = sessionStorage.getItem("boothId");
+    const tableNum = sessionStorage.getItem("tableNum");
 
     config.headers["X-Booth-Id"] = boothId || "";
     config.headers["X-Table-Number"] = tableNum || "";

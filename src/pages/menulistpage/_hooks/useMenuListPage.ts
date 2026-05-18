@@ -138,14 +138,14 @@ const useMenuListPage = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const boothId = localStorage.getItem('boothId');
+        const boothId = sessionStorage.getItem('boothId');
         if (!boothId) {
           setIsLoading(false);
           // navigate(ROUTE_CONSTANTS.LOGIN);
           return;
         }
 
-        const tableId = localStorage.getItem('tableNum');
+        const tableId = sessionStorage.getItem('tableNum');
         const tableNumber = tableId ? parseInt(tableId, 10) : null;
 
         // API 호출 (data.FEE / SET / MENU / DRINK 구조)

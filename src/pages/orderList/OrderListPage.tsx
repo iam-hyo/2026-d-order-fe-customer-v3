@@ -49,7 +49,7 @@ const formatOrderTime = (dateString: string) => {
 
 const OrderListPage = () => {
   const navigate = useNavigate();
-  const tableUsageId = Number(localStorage.getItem('tableUsageId') || 0);
+  const tableUsageId = Number(sessionStorage.getItem('tableUsageId') || 0);
 
   const { orderData, loading, error } = useOrderList(tableUsageId);
   const [orderGroups, setOrderGroups] = useState<OrderGroup[]>([]);

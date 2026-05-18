@@ -46,9 +46,9 @@ export interface TableOrderInfo {
 /** 공통 회수 유틸 */
 const getBoothId = (): string => {
   const boothId =
-    localStorage.getItem("boothId") ??
-    localStorage.getItem("boothID") ??
-    localStorage.getItem("booth_id") ??
+    sessionStorage.getItem("boothId") ??
+    sessionStorage.getItem("boothID") ??
+    sessionStorage.getItem("booth_id") ??
     "";
   return boothId?.toString().trim();
 };
@@ -67,8 +67,8 @@ const getCouponFromEverywhere = (): string | undefined => {
     if (raw) return String(raw).trim();
   }
   const ls =
-    localStorage.getItem("coupon_code") ??
-    localStorage.getItem("couponCode") ??
+    sessionStorage.getItem("coupon_code") ??
+    sessionStorage.getItem("couponCode") ??
     undefined;
   return ls ? ls.trim() : undefined;
 };
@@ -85,7 +85,7 @@ const getCartIdFromEverywhere = (): number | undefined => {
     if (raw && Number.isFinite(Number(raw))) return Number(raw);
   }
   const rawLs =
-    localStorage.getItem("cart_id") ?? localStorage.getItem("cartId") ?? "";
+    sessionStorage.getItem("cart_id") ?? sessionStorage.getItem("cartId") ?? "";
   if (rawLs && Number.isFinite(Number(rawLs))) return Number(rawLs);
   return undefined;
 };
@@ -98,7 +98,7 @@ export const fetchTableOrderInfo = async (
     const boothId = getBoothId();
     if (!boothId) throw new Error("Booth-ID가 설정되지 않았습니다.");
 
-    const tableNum = localStorage.getItem("tableNum") || "";
+    const tableNum = sessionStorage.getItem("tableNum") || "";
     if (!tableNum) throw new Error("table_num을 찾을 수 없습니다.");
 
     const coupon =
@@ -167,7 +167,7 @@ export const createOrderWithStaffCode = async (
     if (!Number.isFinite(cartId)) {
       console.error("[ORDER_CHECK][POST] ❌ cart_id 누락/비정상:", cartId);
       alert(
-        "cart_id를 찾을 수 없습니다. URL에 ?cart_id=숫자를 포함하거나 localStorage에 cartId 또는 cart_id를 저장하세요."
+        "cart_id를 찾을 수 없습니다. URL에 ?cart_id=숫자를 포함하거나 sessionStorage에 cartId 또는 cart_id를 저장하세요."
       );
       return false;
     }

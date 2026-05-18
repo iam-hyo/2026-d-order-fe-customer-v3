@@ -52,7 +52,7 @@ const StaffCodePage = () => {
       // ✅ 백업 저장: API가 URL/로컬에서 회수 가능하도록
       try {
         if (cartIdNum !== undefined)
-          localStorage.setItem("cart_id", String(cartIdNum));
+          sessionStorage.setItem("cart_id", String(cartIdNum));
       } catch {}
 
       return {

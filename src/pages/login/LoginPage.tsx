@@ -26,19 +26,19 @@ const LoginPage = () => {
     setErrorMessage,
   } = useLogin(boothId);
 
-  // URL에서 부스 ID를 가져와 localStorage에 저장
+  // URL에서 부스 ID를 가져와 sessionStorage에 저장 (탭별 격리)
   useEffect(() => {
     if (boothId) {
-      localStorage.setItem('boothId', boothId);
-      localStorage.removeItem('cartId');
-      localStorage.removeItem('tableUsageId');
+      sessionStorage.setItem('boothId', boothId);
+      sessionStorage.removeItem('cartId');
+      sessionStorage.removeItem('tableUsageId');
     }
   }, [boothId]);
 
   useEffect(() => {
     const getBoothInfo = async () => {
       try {
-        const storedBoothId = localStorage.getItem('boothId') || boothId;
+        const storedBoothId = sessionStorage.getItem('boothId') || boothId;
         if (storedBoothId) {
           const name = await fetchBoothName(storedBoothId);
           setBoothName(name);

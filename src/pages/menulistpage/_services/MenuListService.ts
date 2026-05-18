@@ -38,7 +38,7 @@ export type MenuListApiResponse = {
 
 export const MenuListService = {
   fetchAllMenus: async (boothId: string): Promise<MenuListApiResponse> => {
-    const tableNum = localStorage.getItem('tableNum') || '';
+    const tableNum = sessionStorage.getItem('tableNum') || '';
 
     const res = await instance.get<MenuListApiResponse>(
       `/api/v3/django/booth/${boothId}/menu-list/?table_num=${tableNum}`,

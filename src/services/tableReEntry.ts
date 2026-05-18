@@ -20,12 +20,12 @@ export function redirectToLoginAfterTableReset(): void {
   inFlight = true;
 
   // 만료된 세션 흔적 제거
-  localStorage.removeItem('tableUsageId');
-  localStorage.removeItem('cartId');
+  sessionStorage.removeItem('tableUsageId');
+  sessionStorage.removeItem('cartId');
   sessionStorage.removeItem('paymentOwner');
   sessionStorage.removeItem('paymentAccountInfo');
   useCartSnapshotStore.getState().setSnapshot(null);
 
-  const boothId = localStorage.getItem('boothId');
+  const boothId = sessionStorage.getItem('boothId');
   window.location.href = boothId ? `/?id=${boothId}` : '/';
 }

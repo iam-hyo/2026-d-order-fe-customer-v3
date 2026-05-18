@@ -2,12 +2,12 @@ import { instance } from '@services/instance';
 import type { CartSnapshotData } from '../../../types/cartWs';
 
 const getTableUsageId = (): number | null => {
-  const v = localStorage.getItem('tableUsageId');
+  const v = sessionStorage.getItem('tableUsageId');
   const n = v ? Number(v) : NaN;
   return Number.isFinite(n) ? n : null;
 };
 
-const getBoothId = (): string | null => localStorage.getItem('boothId');
+const getBoothId = (): string | null => sessionStorage.getItem('boothId');
 
 function isCartSnapshot(obj: unknown): obj is CartSnapshotData {
   return (

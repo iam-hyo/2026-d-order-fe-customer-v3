@@ -5,7 +5,7 @@ import { useCartSnapshotStore } from '@stores/cartSnapshotStore';
 export const CallService = {
   /** 메뉴 리스트 헤더 직원 호출 — Spring staffcall/request (일반 STAFF_CALL) */
   callStaff: async () => {
-    const boothId = localStorage.getItem('boothId');
+    const boothId = sessionStorage.getItem('boothId');
     if (!boothId) throw new Error('Booth-ID가 없습니다.');
 
     const snap = useCartSnapshotStore.getState().snapshot;

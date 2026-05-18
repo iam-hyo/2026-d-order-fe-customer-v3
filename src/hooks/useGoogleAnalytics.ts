@@ -43,7 +43,7 @@ export const useGoogleAnalytics = () => {
   useEffect(() => {
     if (MEASUREMENT_ID && isGAInitialized && boothId && !boothAccessTracked) {
       // 로컬스토리지에 부스 ID 저장 (다른 컴포넌트에서 사용할 수 있도록)
-      localStorage.setItem("boothId", boothId);
+      sessionStorage.setItem("boothId", boothId);
 
       // 부스 ID를 GA4에 커스텀 매개변수로 설정
       ReactGA.set({ booth_id: boothId });
@@ -65,7 +65,7 @@ export const useGoogleAnalytics = () => {
     // GA가 초기화되었을 때만 페이지뷰 전송
     if (MEASUREMENT_ID && isGAInitialized) {
       // 로컬스토리지에서 부스 ID 가져오기 (URL에 없어도 유지)
-      const storedBoothId = localStorage.getItem("boothId");
+      const storedBoothId = sessionStorage.getItem("boothId");
 
       ReactGA.send({
         hitType: "pageview",
@@ -88,7 +88,7 @@ export const useGoogleAnalytics = () => {
 //   // GA가 초기화되었을 때만 이벤트 전송
 //   if (MEASUREMENT_ID && isGAInitialized) {
 //     // 로컬스토리지에서 부스 ID 가져오기
-//     const storedBoothId = localStorage.getItem("boothId");
+//     const storedBoothId = sessionStorage.getItem("boothId");
 
 //     ReactGA.event(eventName, {
 //       ...parameters,
