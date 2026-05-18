@@ -8,7 +8,11 @@ export const CallService = {
     const boothId = sessionStorage.getItem('boothId');
     if (!boothId) throw new Error('Booth-ID가 없습니다.');
 
-    const snap = useCartSnapshotStore.getState().snapshot;
+    // WS 첫 snapshot 메시지 도착 전 race를 피하기 위해 REST로 fallback
+    let snap = useCartSnapshotStore.getState().snapshot;
+    if (snap?.table_usage?.table_id == null || snap?.cart?.id == null) {
+      snap = await cartApiV3.getDetail();
+    }
 
     const tableId = snap?.table_usage?.table_id;
     const cartId = snap?.cart?.id;
