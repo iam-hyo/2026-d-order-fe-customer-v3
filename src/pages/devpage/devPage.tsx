@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { IMAGE_CONSTANTS } from '@constants/ImageConstants';
 import { ROUTE_CONSTANTS } from '@constants/RouteConstants';
 import DevCard from './components/devCard';
-import RoleFilter, { DevRole } from './components/roleFilter';
+import RoleFilter from './components/roleFilter';
+import type { DevRole } from './components/roleFilter';
 import * as S from './devPage.styled';
 
 const DEV_IMAGES = {

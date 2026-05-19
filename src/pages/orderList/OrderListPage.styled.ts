@@ -58,6 +58,7 @@ export const ImageWrapper = styled.div`
   height: 4.3rem;
   border-radius: 0.5rem;
   background-color: ${({ theme }) => theme.colors.Gray01};
+  overflow: hidden;
 
   display: flex;
   justify-content: center;
@@ -65,15 +66,21 @@ export const ImageWrapper = styled.div`
   flex-shrink: 0;
 
   img {
-    max-width: 4.3rem;
-    border-radius: 0.5rem;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
     object-fit: cover;
+    object-position: center;
   }
 
   svg {
-    max-width: 4.3rem;
-    height: 4.3rem;
-    border-radius: 0.5rem;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: contain;
+    object-position: center;
   }
 `;
 
