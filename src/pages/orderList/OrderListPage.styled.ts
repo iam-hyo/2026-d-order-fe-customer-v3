@@ -53,9 +53,9 @@ export const ItemWrapper = styled.div`
   margin-bottom: 0.3rem;
 `;
 
-export const ImageWrapper = styled.div`
+export const ImageWrapper = styled.div<{ $isDefaultImage?: boolean }>`
   width: 4.3rem;
-  height: 4.3rem;
+  flex-shrink: 0;
   border-radius: 0.5rem;
   background-color: ${({ theme }) => theme.colors.Gray01};
   overflow: hidden;
@@ -63,13 +63,22 @@ export const ImageWrapper = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-shrink: 0;
+
+  /* MenuItem의 MenuImage 스타일 조건문 적용 */
+  ${({ $isDefaultImage }) =>
+    $isDefaultImage
+      ? `
+    aspect-ratio: 1 / 1;
+    height: auto;
+  `
+      : `
+    height: 4.3rem;
+  `}
 
   img {
     display: block;
     width: 100%;
     height: 100%;
-    border-radius: inherit;
     object-fit: cover;
     object-position: center;
   }
@@ -78,7 +87,6 @@ export const ImageWrapper = styled.div`
     display: block;
     width: 100%;
     height: 100%;
-    border-radius: inherit;
     object-fit: contain;
     object-position: center;
   }
