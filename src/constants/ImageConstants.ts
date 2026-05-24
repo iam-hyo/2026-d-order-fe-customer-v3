@@ -19,8 +19,12 @@ import ToDevPage from '@assets/images/ToDevPage.svg';
 import Dorder_Developers from '@assets/images/Dorder-developers.svg';
 
 import BackGround from '@assets/images/background.png';
+import BgV3 from '@assets/images/bgV3.png';
 import InstaIcon from '@assets/icons/insta.png';
 import Reload from '@assets/icons/reload.svg';
+import ReloadV3 from '@assets/icons/reV3.svg';
+import AdLionIcon from '@assets/images/adLionIcon.png';
+import AdLogo from '@assets/images/adLogo.png';
 export const IMAGE_CONSTANTS = {
   Notice: Notice,
   CHARACTER: Character,
@@ -45,6 +49,10 @@ export const IMAGE_CONSTANTS = {
   BEBackground: BEBG,
   PMBackground: PMBG,
   BACKGROUND: BackGround,
+  BACKGROUND_V3: BgV3,
   INSTAGRAMICON: InstaIcon,
   RELOAD: Reload,
+  RELOAD_V3: ReloadV3,
+  AD_LION_ICON: AdLionIcon,
+  AD_LOGO: AdLogo,
 };

@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { useGoogleAnalytics } from "@hooks/useGoogleAnalytics"; // GA 훅 import
 // components
 import DefaultLayout from "@components/layout/DefaultLayout";
@@ -15,6 +15,7 @@ import OrderCompletePage from "@pages/staffCode/OrderCompletePage";
 import DevPage from "@pages/devpage/devPage";
 
 import AdPage from "@pages/advertisement/AdPage";
+import ErrorPage from "@components/error/ErrorPage";
 // GA 추적을 위한 래퍼 컴포넌트
 const LayoutWithAnalytics = ({ children }: { children: React.ReactNode }) => {
   useGoogleAnalytics(); // GA 자동 추적
@@ -38,6 +39,8 @@ const router = createBrowserRouter([
       { path: ROUTE_CONSTANTS.ORDERCOMPLETE, element: <OrderCompletePage /> },
       { path: ROUTE_CONSTANTS.DEVPAGE, element: <DevPage /> },
       { path: ROUTE_CONSTANTS.ADVERTISEMENT, element: <AdPage /> },
+      { path: ROUTE_CONSTANTS.ERROR, element: <ErrorPage /> },
+      { path: "*", element: <Navigate to={ROUTE_CONSTANTS.LOGIN} replace /> },
     ],
   },
 ]);

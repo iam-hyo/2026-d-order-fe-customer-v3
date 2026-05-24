@@ -2,27 +2,20 @@ import { instance } from "@services/instance";
 
 export interface BoothAdItem {
   boothName: string;
-  boothImage: string;
-  hostName: string;
-  boothAllTable: number;
-  boothUsageTable: number;
   location: string;
-  dates: string[];
+  totalTable: number;
+  remainingTable: number;
 }
 
 export interface BoothAdResponse {
-  statusCode: number;
   message: string;
-  data: {
-    boothDetails: BoothAdItem[];
-  };
+  data: BoothAdItem[];
 }
 
-export type BoothInfo = BoothAdItem[];
-
-export const fetchBoothAds = async (): Promise<BoothInfo> => {
+export const fetchBoothAds = async (date: string): Promise<BoothAdItem[]> => {
   const res = await instance.get<BoothAdResponse>(
-    "/api/v2/public/d-order/booths/ad/"
+    "/api/v3/django/booth/ad-banner/",
+    { params: { date } }
   );
-  return res.data?.data?.boothDetails ?? [];
+  return res.data?.data ?? [];
 };

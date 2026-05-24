@@ -9,4 +9,5 @@ export const ROUTE_CONSTANTS = {
   ORDERCOMPLETE: "/order-complete",
   DEVPAGE : "/devpage",
   ADVERTISEMENT: "/ad",
+  ERROR: "/error",
 };
