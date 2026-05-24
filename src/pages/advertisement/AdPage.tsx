@@ -70,7 +70,7 @@ const AdPage = () => {
     setIsReloading(false);
   };
 
-  // location 같은 곳끼리 + 만석은 하단
+  // location 같은 곳끼리 + 만석은 하단 (preview 모드일 땐 location만 정렬)
   const contactBoothsToRender = useMemo(() => {
     return booths
       .map((b) => {
@@ -87,11 +87,13 @@ const AdPage = () => {
         };
       })
       .sort((a, b) => {
-        if (a.status === 'FULL' && b.status !== 'FULL') return 1;
-        if (a.status !== 'FULL' && b.status === 'FULL') return -1;
+        if (!isComingSoon) {
+          if (a.status === 'FULL' && b.status !== 'FULL') return 1;
+          if (a.status !== 'FULL' && b.status === 'FULL') return -1;
+        }
         return a.location.localeCompare(b.location, 'ko');
       });
-  }, [booths]);
+  }, [booths, isComingSoon]);
 
   return (
     <Wrapper>
@@ -129,7 +131,7 @@ const AdPage = () => {
 
       {/* 부스 카드 리스트 */}
       <BoothListContainer>
-        <BoothListWrapper ref={boothWrapperRef} $locked={isComingSoon}>
+        <BoothListWrapper ref={boothWrapperRef}>
           {contactBoothsToRender.map((b, idx) => (
             <ContactBoothCard
               key={`${b.hostName}-${idx}`}
@@ -139,16 +141,10 @@ const AdPage = () => {
               remaining={b.remaining}
               capacity={b.capacity}
               status={b.status}
+              isPreview={isComingSoon}
             />
           ))}
         </BoothListWrapper>
-        {isComingSoon && (
-          <ComingSoonOverlay>
-            <ComingSoonCard>
-              <ComingSoonText>COMING SOON</ComingSoonText>
-            </ComingSoonCard>
-          </ComingSoonOverlay>
-        )}
       </BoothListContainer>
 
       {/* 하단 인스타그램 연락처 */}
@@ -281,13 +277,13 @@ const BoothListContainer = styled.div`
   min-height: 0;
 `;
 
-const BoothListWrapper = styled.div<{ $locked?: boolean }>`
+const BoothListWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
   height: 100%;
-  overflow-y: ${({ $locked }) => ($locked ? 'hidden' : 'auto')};
+  overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   gap: 16px;
@@ -299,36 +295,6 @@ const BoothListWrapper = styled.div<{ $locked?: boolean }>`
   &::-webkit-scrollbar {
     display: none;
   }
-`;
-
-const ComingSoonOverlay = styled.div`
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  padding: 16px 0;
-  box-sizing: border-box;
-  pointer-events: none;
-`;
-
-const ComingSoonCard = styled.div`
-  width: 91%;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: all;
-`;
-
-const ComingSoonText = styled.p`
-  ${({ theme }) => theme.fonts.ExtraBold24};
-  color: ${({ theme }) => theme.colors.Orange01};
-  letter-spacing: 4px;
-  margin: 0;
 `;
 
 const ContactInfoWrapper = styled.div`

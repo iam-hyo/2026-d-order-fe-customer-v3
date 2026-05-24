@@ -10,6 +10,7 @@ type Props = {
   remaining: number;
   capacity: number;
   status: Status;
+  isPreview?: boolean;
 };
 
 const getStatusColor = (status: Status) =>
@@ -22,6 +23,7 @@ const ContactBoothCard = ({
   remaining,
   capacity,
   status,
+  isPreview = false,
 }: Props) => {
   const statusLabel =
     status === 'AVAILABLE' ? '여유' : status === 'SOON' ? '임박' : '만석';
@@ -29,7 +31,7 @@ const ContactBoothCard = ({
     capacity > 0 ? Math.min(100, (remaining / capacity) * 100) : 0;
 
   return (
-    <Wrapper $isFull={status === 'FULL'}>
+    <Wrapper $isFull={!isPreview && status === 'FULL'}>
       <ImageBox>
         {boothImage ? (
           <BoothImage src={boothImage} alt={`${hostName} 이미지`} />
@@ -44,19 +46,23 @@ const ContactBoothCard = ({
           <LocationText>{location || '위치 미정'}</LocationText>
         </NameRow>
 
-        <InfoArea>
-          <NumberRow>
-            <NumberDisplay>
-              <RemainingNum $status={status}>{Math.max(0, remaining)}</RemainingNum>
-              <CapacityNum>/{capacity ?? 0}</CapacityNum>
-            </NumberDisplay>
-            <StatusBadge $status={status}>{statusLabel}</StatusBadge>
-          </NumberRow>
+        {isPreview ? (
+          <PreviewCapacity>총 {capacity}석</PreviewCapacity>
+        ) : (
+          <InfoArea>
+            <NumberRow>
+              <NumberDisplay>
+                <RemainingNum $status={status}>{Math.max(0, remaining)}</RemainingNum>
+                <CapacityNum>/{capacity ?? 0}</CapacityNum>
+              </NumberDisplay>
+              <StatusBadge $status={status}>{statusLabel}</StatusBadge>
+            </NumberRow>
 
-          <ProgressBarBg>
-            <ProgressBarFill $percent={progressPercent} $status={status} />
-          </ProgressBarBg>
-        </InfoArea>
+            <ProgressBarBg>
+              <ProgressBarFill $percent={progressPercent} $status={status} />
+            </ProgressBarBg>
+          </InfoArea>
+        )}
       </ContentArea>
     </Wrapper>
   );
@@ -137,6 +143,13 @@ const LocationText = styled.span`
   color: #6b7280;
   white-space: nowrap;
   flex-shrink: 0;
+`;
+
+const PreviewCapacity = styled.span`
+  font-family: 'SUIT', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #9ca3af;
 `;
 
 const InfoArea = styled.div`
