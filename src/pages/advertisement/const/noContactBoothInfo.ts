@@ -8,14 +8,14 @@ export type NoContactBoothInfo = {
 export const NO_CONTACT_BOOTH_INFO: NoContactBoothInfo[] = [
   {
     date: "2026-05-26",
-    booths: [],
+    booths: ['철학과', '미술학과', '뭐먹을과'],
   },
   {
     date: "2026-05-27",
-    booths: [],
+    booths: ['교육학과', '중어중문과', '구구까과'],
   },
   {
     date: "2026-05-28",
-    booths: [],
+    booths: ['뭐입을과', 'FC온라인', '감귤포장학과'],
   },
 ];
