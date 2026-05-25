@@ -1,4 +1,10 @@
-import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type ReactNode,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import copy from '@assets/icons/copy.svg';
@@ -111,10 +117,17 @@ const SendMoneyModal = ({
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [staffcallWaiting, setStaffcallWaiting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastVariant, setToastVariant] = useState<'orange' | 'neutral'>(
+    'orange',
+  );
 
-  const showToast = useCallback((message: string) => {
-    setToastMessage(message);
-  }, []);
+  const showToast = useCallback(
+    (message: string, variant: 'orange' | 'neutral' = 'orange') => {
+      setToastVariant(variant);
+      setToastMessage(message);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!toastMessage) return undefined;
@@ -142,7 +155,7 @@ const SendMoneyModal = ({
   const withToast = (content: ReactNode) => (
     <>
       {content}
-      <CartToast message={toastMessage} elevated />
+      <CartToast message={toastMessage} elevated variant={toastVariant} />
     </>
   );
   const clearHeartbeat = () => {
@@ -482,7 +495,7 @@ const SendMoneyModal = ({
                     staffCallId,
                     subscribeToken,
                   });
-                  showToast('호출을 취소했습니다.');
+                  showToast('호출을 취소했습니다.', 'neutral');
                 } catch (e: unknown) {
                   const msg =
                     (e as { response?: { data?: { message?: string } } })

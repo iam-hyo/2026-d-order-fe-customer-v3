@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import React, { SetStateAction } from 'react';
-import { toast } from 'react-toastify';
 import { IMAGE_CONSTANTS } from '@constants/ImageConstants';
 
 interface CouponModalProps {
   onClose: () => void;
+  onShowToast: (message: string) => void;
   CheckCoupon: (code: string) => Promise<unknown>;
   appliedCoupon: boolean;
   setAppliedCoupon: () => void;
@@ -20,6 +20,7 @@ interface CouponModalProps {
 
 const CouponModal = ({
   onClose,
+  onShowToast,
   CheckCoupon,
   appliedCoupon,
   setAppliedCoupon,
@@ -53,25 +54,18 @@ const CouponModal = ({
       onClose();
     } catch (error) {
       const err = error as Error & { status?: number; errorCode?: string };
-      const msg = err.message || '유효하지 않은 쿠폰 번호입니다.';
-      const TOAST_ONLY_CODES = ['COUPON_CODE_IN_USE', 'COUPON_ALREADY_APPLIED', 'CART_NOT_ACTIVE'];
+      const msg = '유효하지 않은 쿠폰 번호입니다.';
+      const msg2 = '해당 번호의 쿠폰이 존재하지 않아요!';
+      const TOAST_ONLY_CODES = [
+        'COUPON_CODE_IN_USE',
+        'COUPON_ALREADY_APPLIED',
+        'CART_NOT_ACTIVE',
+      ];
       const isToastOnly = err.errorCode
         ? TOAST_ONLY_CODES.includes(err.errorCode)
         : err.status === 409;
       if (!isToastOnly) setCouponError(msg);
-      toast.error(msg, {
-        icon: <img src={IMAGE_CONSTANTS.CHECK} alt="" />,
-        closeButton: false,
-        style: {
-          backgroundColor: '#FF6E3F',
-          color: '#FAFAFA',
-          fontSize: '14px',
-          fontWeight: '800',
-          borderRadius: '8px',
-          padding: '0.75rem 0.875rem',
-          zIndex: 100,
-        },
-      });
+      onShowToast(msg2);
     } finally {
       setSubmitting(false);
     }

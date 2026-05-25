@@ -1,7 +1,16 @@
 import styled, { keyframes, css } from 'styled-components';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BoothAdItem, fetchBoothAds } from './service/BoothInfo';
+import {
+  BoothAdItem,
+  fetchBoothAds,
+  // [MOCK ↔ API 전환 지점] 로컬 mock 데이터로 돌리려면 아래 import를 활성화하고
+  // fetchData/onReload 의 mock 블록 주석을 해제하면 됨.
+  // fetchBoothAdsMock0526,
+  // fetchBoothAdsMock0527,
+  // fetchBoothAdsMock0528,
+} from './service/BoothInfo';
 import AdFooter from './_components/AdFooter';
+import FireworksCanvas from './_components/FireworksCanvas';
 import adLogoWh from '@assets/images/adLogoWh.png';
 import { IMAGE_CONSTANTS } from '@constants/ImageConstants';
 
@@ -37,10 +46,12 @@ const STATUS_LABELS: Record<Status, string> = {
   FULL: '만석',
 };
 
+// 밝은 크림 카드 위에서 또렷하게 읽히도록 명도 낮춘 버전.
+// AVAILABLE은 특히 너무 밝아 보이지 않도록 깊은 녹색으로.
 const STATUS_COLORS: Record<Status, string> = {
-  AVAILABLE: '#4ade80',
-  SOON: '#fb923c',
-  FULL: '#ef4444',
+  AVAILABLE: '#16a34a',
+  SOON: '#ea580c',
+  FULL: '#b91c1c',
 };
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -112,6 +123,40 @@ const SPARKLES = [
   { x: 68, y: 32, size: 10, dur: 4.2, delay: 2.2  },
 ];
 
+// 밤하늘 실구름(권운) 느낌의 얇은 streak.
+// 옅은 안개가 아니라, 약간 또렷하고 길게 흐르는 가로형 구름.
+const CLOUD_STREAKS = [
+  { left: '-8%',  top: '4%',  width: '85%', height: '38px', rot: -5, blur: 8,  op: 0.22 },
+  { left: '25%',  top: '14%', width: '92%', height: '28px', rot: 4,  blur: 6,  op: 0.15 },
+  { left: '-18%', top: '27%', width: '78%', height: '44px', rot: -3, blur: 9,  op: 0.18 },
+  { left: '32%',  top: '41%', width: '88%', height: '32px', rot: 6,  blur: 7,  op: 0.14 },
+  { left: '-15%', top: '56%', width: '80%', height: '42px', rot: -7, blur: 10, op: 0.18 },
+  { left: '20%',  top: '72%', width: '95%', height: '30px', rot: 3,  blur: 7,  op: 0.13 },
+  { left: '-12%', top: '88%', width: '74%', height: '38px', rot: -4, blur: 8,  op: 0.16 },
+];
+
+// 헤더 우측 상단 데코용 작은 별자리 (5개 별을 잇는 형태)
+const CORNER_STARS: { cx: number; cy: number; r: number; o: number; delay: number }[] = [
+  { cx: 14, cy: 36, r: 0.9, o: 0.85, delay: 0   },
+  { cx: 34, cy: 18, r: 1.3, o: 1.0,  delay: 0.8 },
+  { cx: 55, cy: 28, r: 1.0, o: 0.9,  delay: 1.6 },
+  { cx: 75, cy: 14, r: 0.85, o: 0.85, delay: 2.2 },
+  { cx: 86, cy: 38, r: 0.9, o: 0.85, delay: 0.4 },
+];
+const CORNER_EDGES: [number, number][] = [[0,1],[1,2],[2,3],[3,4]];
+
+// 강조용 하이라이트 별 — 따뜻한 글로우와 함께 천천히 깜빡임.
+const HIGHLIGHT_STARS = [
+  { x: 18, y: 28, size: 4.0, dur: 3.6, delay: 0   },
+  { x: 84, y: 42, size: 5.0, dur: 4.2, delay: 1.2 },
+  { x: 32, y: 70, size: 4.0, dur: 3.8, delay: 2.8 },
+  { x: 64, y: 84, size: 4.2, dur: 3.3, delay: 0.6 },
+  { x: 46, y: 24, size: 3.2, dur: 4.8, delay: 3.5 },
+  { x:  8, y: 50, size: 3.6, dur: 3.6, delay: 4.0 },
+  { x: 92, y: 76, size: 4.6, dur: 4.5, delay: 1.8 },
+];
+
+
 const CONSTELLATIONS = [
   {
     nodes: [[5,9],[9,8],[10,11],[6,12],[5,15],[5.5,18],[7,21]] as [number,number][],
@@ -153,11 +198,6 @@ const sparkleGlow = keyframes`
   80%       { transform: scale(0.2); opacity: 0; }
 `;
 
-const nebulaShift = keyframes`
-  0%, 100% { transform: scale(1) translateY(0); }
-  50%      { transform: scale(1.04) translateY(-6px); }
-`;
-
 const constellationPulse = keyframes`
   0%, 100% { opacity: 0.55; }
   50%      { opacity: 0.85; }
@@ -183,6 +223,11 @@ const rotateAnim = keyframes`
   to   { transform: rotate(360deg); }
 `;
 
+const highlightTwinkle = keyframes`
+  0%, 100% { opacity: 0.45; transform: scale(0.85); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+`;
+
 // ─── Component ────────────────────────────────────────────
 
 const AdPage = () => {
@@ -195,12 +240,21 @@ const AdPage = () => {
   const touchStartX = useRef<number>(0);
   const touchStartY = useRef<number>(0);
 
-  const isComingSoon = activeDay !== '2026-05-26' && activeDay > getTodayStr();
+const isComingSoon = activeDay !== '2026-05-26' && activeDay > getTodayStr();
 
-  // API hook point: toggle mock ↔ real API in BoothInfo.ts
+  // [MOCK ↔ API 전환 지점] 현재 실 API 사용.
+  // mock 으로 돌리려면 아래 API 한 줄을 주석 처리하고 mock 블록 주석 해제.
   const fetchData = async (date: DateValue) => {
     try {
       const data = await fetchBoothAds(date);
+      // ── mock 분기 (필요 시 활성화) ────────────────────────────
+      // const data =
+      //   date === '2026-05-26'
+      //     ? await fetchBoothAdsMock0526()
+      //     : date === '2026-05-27'
+      //     ? await fetchBoothAdsMock0527()
+      //     : await fetchBoothAdsMock0528();
+      // ─────────────────────────────────────────────────────────
       setBooths(data);
       setLastUpdated(formatTime(new Date()));
     } catch {
@@ -261,15 +315,22 @@ const AdPage = () => {
     [booths, sortOrder]
   );
 
+  // [MOCK ↔ API 전환 지점] 현재 실 API 재호출로 데이터 갱신.
+  // mock 으로 돌리면 데이터가 정적이라 갱신이 보이지 않으므로,
+  // 그 경우 아래 페이지 리로드 블록을 활성화하면 됨.
   const onReload = async () => {
     if (isReloading) return;
     setIsReloading(true);
-    // 최소 700ms 스피너 유지 (mock 데이터는 즉시 완료되므로)
     await Promise.all([
       fetchData(activeDay),
       new Promise<void>((resolve) => setTimeout(resolve, 700)),
     ]);
     setIsReloading(false);
+    // ── mock 사용 시 페이지 리로드 분기 (필요 시 위 블록 대신 활성화) ──
+    // setTimeout(() => {
+    //   window.location.reload();
+    // }, 600);
+    // ─────────────────────────────────────────────────────────
   };
 
   return (
@@ -277,20 +338,40 @@ const AdPage = () => {
       {/* ── Fixed background ── */}
       <Background>
         <GrainLayer />
-        <Fog style={{ left: '0%',  top: '5%',  width: '60%', height: '45%', filter: 'blur(55px)', background: 'radial-gradient(ellipse, rgba(200,200,210,0.055), transparent)' }} />
-        <Fog style={{ left: '45%', top: '35%', width: '65%', height: '55%', filter: 'blur(42px)', background: 'radial-gradient(ellipse, rgba(185,185,195,0.045), transparent)' }} />
-        <Fog style={{ left: '15%', top: '0%',  width: '75%', height: '38%', filter: 'blur(38px)', background: 'radial-gradient(ellipse, rgba(190,190,200,0.04),  transparent)' }} />
-        <Nebula style={{ left: '25%',  top: '10%', width: '55%', height: '55%', animationDuration: '11s', background: 'radial-gradient(ellipse, rgba(90,90,100,0.38),  transparent)' }} />
-        <Nebula style={{ left: '-5%',  top: '45%', width: '50%', height: '58%', animationDuration: '14s', background: 'radial-gradient(ellipse, rgba(75,75,85,0.32),   transparent)' }} />
-        <Nebula style={{ left: '55%',  top: '50%', width: '55%', height: '55%', animationDuration: '12s', background: 'radial-gradient(ellipse, rgba(82,82,92,0.30),   transparent)' }} />
-        <BrushStreak style={{ top: '20%', transform: 'rotate(-27deg)', background: 'linear-gradient(90deg, transparent, rgba(130,130,140,0.08), transparent)', filter: 'blur(14px)' }} />
-        <BrushStreak style={{ top: '58%', transform: 'rotate(-18deg)', background: 'linear-gradient(90deg, transparent, rgba(120,120,130,0.06), transparent)', filter: 'blur(19px)' }} />
+        {CLOUD_STREAKS.map((c, i) => (
+          <CloudStreak
+            key={i}
+            style={{
+              left: c.left,
+              top: c.top,
+              width: c.width,
+              height: c.height,
+              transform: `rotate(${c.rot}deg)`,
+              filter: `blur(${c.blur}px)`,
+              background: `linear-gradient(90deg, transparent 0%, rgba(225,230,240,${c.op}) 48%, rgba(225,230,240,${c.op * 0.6}) 60%, transparent 100%)`,
+            }}
+          />
+        ))}
         {STARS.map((s, i) => (
           <Star key={i} style={{ left: `${s.x}%`, top: `${s.y}%`, width: `${s.size}px`, height: `${s.size}px`, opacity: s.opacity, animationDuration: `${s.duration}s`, animationDelay: `${s.delay}s` }} />
         ))}
         {SPARKLES.map((sp, i) => (
           <Sparkle key={i} style={{ left: `${sp.x}%`, top: `${sp.y}%`, fontSize: `${sp.size}px`, animationDuration: `${sp.dur}s`, animationDelay: `${sp.delay}s` }}>✦</Sparkle>
         ))}
+        {HIGHLIGHT_STARS.map((s, i) => (
+          <HighlightStar
+            key={i}
+            style={{
+              left: `${s.x}%`,
+              top: `${s.y}%`,
+              width: `${s.size}px`,
+              height: `${s.size}px`,
+              animationDuration: `${s.dur}s`,
+              animationDelay: `${s.delay}s`,
+            }}
+          />
+        ))}
+        <FireworksCanvas />
         <ConstellationSvg viewBox='0 0 100 100' preserveAspectRatio='none'>
           <defs>
             <filter id='c-glow'>
@@ -333,17 +414,37 @@ const AdPage = () => {
 
       {/* ── Full-width sticky liquid glass header ── */}
       <StickyTopBar>
+        <CornerConstellation viewBox="0 0 100 60" preserveAspectRatio="xMaxYMin meet">
+          {CORNER_EDGES.map(([a, b], i) => (
+            <line
+              key={i}
+              x1={CORNER_STARS[a].cx}
+              y1={CORNER_STARS[a].cy}
+              x2={CORNER_STARS[b].cx}
+              y2={CORNER_STARS[b].cy}
+              stroke="rgba(225,215,185,0.32)"
+              strokeWidth="0.35"
+              strokeDasharray="0.6 1.6"
+              strokeLinecap="round"
+            />
+          ))}
+          {CORNER_STARS.map((s, i) => (
+            <CornerStar
+              key={i}
+              cx={s.cx}
+              cy={s.cy}
+              r={s.r}
+              fill={`rgba(255,248,225,${s.o})`}
+              style={{ animationDelay: `${s.delay}s` }}
+            />
+          ))}
+        </CornerConstellation>
         <Header>
-          <SubTitle>2026 봄 대동제 주점 실시간 좌석 현황</SubTitle>
-          <MainTitle>지금 어느 부스로 가야할까?</MainTitle>
-          <ProdBadge
-            href='https://2602-d-order-home-page.vercel.app/'
-            target='_blank'
-            rel='noopener noreferrer'
-          >
-            <ProdByText>Prod by.</ProdByText>
+          <BrandLine>
             <AdLogoImg src={adLogoWh} alt='D-Order' />
-          </ProdBadge>
+            <BrandText>X 2026 동국대학교 봄 대동제</BrandText>
+          </BrandLine>
+          <MainTitle>지금 어느 부스로 가야할까?</MainTitle>
         </Header>
 
         {/* Date segmented control — swipe also works */}
@@ -354,8 +455,8 @@ const AdPage = () => {
               $active={d.value === activeDay}
               onClick={() => changeDate(d.value)}
             >
-              <DateTabLabel>{d.label}</DateTabLabel>
-              <DateTabDay>{d.day}</DateTabDay>
+              <DateTabLabel>{d.label} <DateTabDay>{d.day}</DateTabDay></DateTabLabel>
+              
             </DateTab>
           ))}
         </DateNav>
@@ -372,7 +473,9 @@ const AdPage = () => {
               <SortBtn $active={sortOrder === 'desc'} onClick={() => setSortOrder('desc')} title='가동률 내림차순'>↓</SortBtn>
               <ReloadArea>
                 {lastUpdated && <UpdateTime>{lastUpdated} 기준</UpdateTime>}
-                <ReloadBtn onClick={onReload} disabled={isReloading} $spinning={isReloading}>↻</ReloadBtn>
+                <ReloadBtn onClick={onReload} disabled={isReloading}>
+                  <ReloadIcon $spinning={isReloading}>↻</ReloadIcon>
+                </ReloadBtn>
               </ReloadArea>
             </SortControls>
           </ListHeader>
@@ -399,7 +502,9 @@ const AdPage = () => {
                       {/* Name + status badge on same row */}
                       <BoothNameRow>
                         <BoothCardName>{b.name}</BoothCardName>
-                        <StatusBadge $status={b.status}>{STATUS_LABELS[b.status]}</StatusBadge>
+                        {!isComingSoon && (
+                          <StatusBadge $status={b.status}>{STATUS_LABELS[b.status]}</StatusBadge>
+                        )}
                       </BoothNameRow>
                       {b.location && <BoothCardLocation>{b.location}</BoothCardLocation>}
 
@@ -463,20 +568,11 @@ const GrainLayer = styled.div`
   mix-blend-mode: overlay;
 `;
 
-const Fog = styled.div`position: absolute;`;
-
-const Nebula = styled.div`
+// 밤하늘 권운 streak — 가로 방향으로 길게 흐르는 얇은 구름.
+const CloudStreak = styled.div`
   position: absolute;
   border-radius: 50%;
-  filter: blur(85px);
-  animation: ${nebulaShift} ease-in-out infinite;
-`;
-
-const BrushStreak = styled.div`
-  position: absolute;
-  left: -10%;
-  width: 120%;
-  height: 55px;
+  pointer-events: none;
 `;
 
 const Star = styled.div`
@@ -492,6 +588,18 @@ const Sparkle = styled.div`
   animation: ${sparkleGlow} ease-in-out infinite;
 `;
 
+// 따뜻한 글로우 하이라이트 별 — 기존 Star보다 두드러지게.
+const HighlightStar = styled.div`
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,250,225,1) 0%, rgba(255,220,160,0.65) 45%, transparent 75%);
+  box-shadow:
+    0 0 6px rgba(255, 220, 150, 0.75),
+    0 0 14px rgba(255, 180, 100, 0.4);
+  animation: ${highlightTwinkle} ease-in-out infinite;
+  pointer-events: none;
+`;
+
 const ConstellationSvg = styled.svg`
   position: absolute;
   inset: 0;
@@ -501,6 +609,27 @@ const ConstellationSvg = styled.svg`
 
 const ConstellationGroup = styled.g`
   animation: ${constellationPulse} 4s ease-in-out infinite;
+`;
+
+const cornerStarTwinkle = keyframes`
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+`;
+
+// 헤더 우측 상단 데코용 별자리.
+// xMaxYMin meet로 우측 상단 정렬되도록 viewBox 매핑.
+const CornerConstellation = styled.svg`
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  width: 96px;
+  height: 56px;
+  pointer-events: none;
+  z-index: 1;
+`;
+
+const CornerStar = styled.circle`
+  animation: ${cornerStarTwinkle} 3.6s ease-in-out infinite;
 `;
 
 // ── Content ────────────────────────────────────────────────
@@ -517,103 +646,103 @@ const Content = styled.div`
 
 // ── Sticky top bar ─────────────────────────────────────────
 
+// 카드가 밝은 톤이 되어 그 위로 비치면 텍스트 가독성이 떨어짐.
+// → backdrop blur 유지하되 알파를 크게 올려 거의 불투명에 가깝게.
 const StickyTopBar = styled.div`
   position: sticky;
   top: 0;
   z-index: 50;
   width: 100%;
-  /* Liquid glass: semi-transparent gradient + blur + saturate */
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.07) 0%,
-    rgba(14, 12, 10, 0.38) 100%
+    rgba(24, 18, 14, 0.92) 0%,
+    rgba(14, 10, 8, 0.96) 100%
   );
-  backdrop-filter: blur(8px) saturate(160%);
-  -webkit-backdrop-filter: blur(8px) saturate(160%);
-  /* Glass rim highlights */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 6px 28px rgba(0, 0, 0, 0.25);
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 6px 28px rgba(0, 0, 0, 0.4);
 `;
 
 const Header = styled.div`
-  padding: 44px 20px 16px;
+  padding: 40px 20px 14px;
 `;
 
-const SubTitle = styled.p`
-  font-size: 14px;
+// 로고 + 협업 문구를 한 줄로 배치.
+const BrandLine = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+`;
+
+const BrandText = styled.span`
+  font-size: 13px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.55);
-  margin: 0 0 8px;
-  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.62);
+  letter-spacing: 0.01em;
+  font-family: 'SUIT', sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const MainTitle = styled.h1`
   font-size: clamp(1.5rem, 5.5vw, 2.2rem);
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.93);
+  color: rgba(255, 255, 255, 0.95);
   margin: 0;
   letter-spacing: -0.025em;
   line-height: 1.2;
   white-space: nowrap;
 `;
 
-const ProdBadge = styled.a`
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-  padding: 9px 16px 9px 13px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(255, 110, 63, 0.2), rgba(251, 146, 60, 0.12));
-  border: 1px solid rgba(255, 110, 63, 0.45);
-  backdrop-filter: blur(8px);
-  text-decoration: none;
-  transition: background 0.2s, border-color 0.2s, transform 0.15s;
-  &:hover {
-    background: linear-gradient(135deg, rgba(255, 110, 63, 0.28), rgba(251, 146, 60, 0.18));
-    border-color: rgba(255, 110, 63, 0.6);
-    transform: translateY(-1px);
-  }
-  &:active { transform: translateY(0); }
-`;
-
-const ProdByText = styled.span`
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 200, 150, 0.88);
-  font-family: 'SUIT', sans-serif;
-`;
-
 const AdLogoImg = styled.img`
-  height: 22px;
+  height: 20px;
   width: auto;
   object-fit: contain;
+  flex-shrink: 0;
 `;
 
 // ── Date segmented control ─────────────────────────────────
 
 const DateNav = styled.div`
   display: flex;
-  padding: 3px 16px 12px;
-  gap: 6px;
+  padding: 4px 12px 0;
+  gap: 2px;
 `;
 
 const DateTab = styled.button<{ $active: boolean }>`
   flex: 1;
-  background: ${({ $active }) => ($active ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.04)')};
-  border: 1px solid ${({ $active }) => ($active ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)')};
-  border-radius: 12px;
-  color: ${({ $active }) => ($active ? 'rgba(255,255,255,0.93)' : 'rgba(255,255,255,0.32)')};
-  padding: 10px 4px;
+  background: transparent;
+  border: none;
+  color: ${({ $active }) => ($active ? 'rgba(255,248,230,0.96)' : 'rgba(255,255,255,0.38)')};
+  padding: 10px 4px 14px;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  position: relative;
+  transition: color 0.2s ease;
   font-family: 'SUIT', sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: ${({ $active }) => ($active ? '72%' : '0')};
+    height: 2px;
+    background: linear-gradient(90deg, rgba(255,200,150,0.9), rgba(255,235,205,0.95));
+    border-radius: 2px 2px 0 0;
+    transition: width 0.25s ease;
+  }
 `;
 
 const DateTabLabel = styled.span`
@@ -626,7 +755,7 @@ const DateTabLabel = styled.span`
 const DateTabDay = styled.span`
   font-size: 10px;
   font-weight: 500;
-  opacity: 0.65;
+  opacity: 0.7;
   line-height: 1;
 `;
 
@@ -688,7 +817,7 @@ const UpdateTime = styled.span`
   white-space: nowrap;
 `;
 
-const ReloadBtn = styled.button<{ $spinning: boolean }>`
+const ReloadBtn = styled.button`
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
@@ -701,12 +830,19 @@ const ReloadBtn = styled.button<{ $spinning: boolean }>`
   align-items: center;
   justify-content: center;
   padding: 0;
+  &:disabled { opacity: 0.3; cursor: default; }
+`;
+
+const ReloadIcon = styled.span<{ $spinning: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   ${({ $spinning }) =>
     $spinning &&
     css`
       animation: ${rotateAnim} 1s linear infinite;
     `}
-  &:disabled { opacity: 0.3; cursor: default; }
 `;
 
 const BoothGrid = styled.div<{ $slideDir: SlideDir }>`
@@ -743,22 +879,37 @@ const InfoText = styled.p`
 
 // ── Booth card ─────────────────────────────────────────────
 
+// ── 카드 팔레트 ──
+// 어두운 밤하늘 위의 크림 종이/등롱 메타포.
+// 살짝 따뜻한 톤(피치/크림)으로 화이트 느낌 회피.
+// FULL은 opacity 떨어뜨리지 않고 배경을 한 단계 어둡게(토스트 종이).
+const CARD_BG = 'rgba(249, 234, 209, 0.96)';
+// FULL: 크림을 탈채도시킨 밝은 웜그레이. "바랜 종이" 톤으로 마감 표현.
+const CARD_BG_FULL = 'rgba(230, 224, 216, 0.94)';
+const CARD_BORDER = 'rgba(70, 45, 25, 0.1)';
+const CARD_TEXT = 'rgba(28, 18, 12, 0.94)';
+const CARD_TEXT_MUTED = 'rgba(54, 38, 24, 0.72)';
+const CARD_TEXT_DIM = 'rgba(70, 50, 30, 0.6)';
+
 const BoothCard = styled.div<{ $isFull: boolean }>`
   display: flex;
   align-items: stretch;
   gap: 10px;
   padding: 12px;
-  background: rgba(22, 20, 16, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 12px;
-  opacity: ${({ $isFull }) => ($isFull ? 0.62 : 1)};
+  background: ${({ $isFull }) => ($isFull ? CARD_BG_FULL : CARD_BG)};
+  border: 1px solid ${CARD_BORDER};
+  border-radius: 14px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 6px 18px rgba(0, 0, 0, 0.38),
+    0 1px 3px rgba(0, 0, 0, 0.25);
 `;
 
 const BoothCardImageBox = styled.div`
   width: 76px;
   min-height: 76px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(45, 30, 20, 0.07);
   flex-shrink: 0;
   overflow: hidden;
   position: relative;
@@ -801,7 +952,7 @@ const BoothNameRow = styled.div`
 const BoothCardName = styled.span`
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.88);
+  color: ${CARD_TEXT};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -810,21 +961,24 @@ const BoothCardName = styled.span`
   font-family: 'SUIT', sans-serif;
 `;
 
+// 밝은 배경 위에서는 외곽선만으론 가독성이 약해 살짝 채운 pill 형태.
 const StatusBadge = styled.span<{ $status: Status }>`
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
-  padding: 2px 6px;
+  padding: 3px 10px;
   border-radius: 999px;
-  border: 1px solid ${({ $status }) => STATUS_COLORS[$status]};
+  background: ${({ $status }) => `${STATUS_COLORS[$status]}1F`};
+  border: 1px solid ${({ $status }) => `${STATUS_COLORS[$status]}66`};
   color: ${({ $status }) => STATUS_COLORS[$status]};
   white-space: nowrap;
   flex-shrink: 0;
+  letter-spacing: 0.02em;
 `;
 
 const BoothCardLocation = styled.span`
   font-size: 11px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.32);
+  color: ${CARD_TEXT_MUTED};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -833,8 +987,8 @@ const BoothCardLocation = styled.span`
 
 const RemainingLabel = styled.span`
   font-size: 9px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.28);
+  font-weight: 700;
+  color: ${CARD_TEXT_MUTED};
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-top: 4px;
@@ -843,7 +997,7 @@ const RemainingLabel = styled.span`
 
 const BoothCardPreview = styled.span`
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.3);
+  color: ${CARD_TEXT_MUTED};
   font-family: 'SUIT', sans-serif;
   margin-top: 4px;
 `;
@@ -858,7 +1012,7 @@ const BoothProgressBar = styled.div<{ $status: Status }>`
   flex: 1;
   height: 4px;
   background: ${({ $status }) =>
-    $status === 'FULL' ? 'rgba(239,68,68,0.18)' : 'rgba(255,255,255,0.1)'};
+    $status === 'FULL' ? 'rgba(185, 28, 28, 0.18)' : 'rgba(50, 35, 25, 0.16)'};
   border-radius: 100px;
   overflow: hidden;
 `;
@@ -880,6 +1034,6 @@ const BoothCapacityText = styled.span<{ $status: Status }>`
   font-family: 'SUIT', sans-serif;
   span {
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.3);
+    color: ${CARD_TEXT_DIM};
   }
 `;

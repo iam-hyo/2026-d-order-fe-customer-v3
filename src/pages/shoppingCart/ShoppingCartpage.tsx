@@ -44,6 +44,8 @@ const ShoppingCartPage = () => {
     decreaseQuantity,
     deleteItem,
     cartToastMessage,
+    cartToastVariant,
+    showCartToast,
     setIsCouponModal,
     isCouponModal,
     CheckCoupon,
@@ -170,6 +172,7 @@ const ShoppingCartPage = () => {
         <S.DarkWrapper>
           <CouponModal
             onClose={() => setIsCouponModal(false)}
+            onShowToast={(msg) => showCartToast(msg, 'neutral')}
             CheckCoupon={CheckCoupon}
             appliedCoupon={appliedCoupon}
             setAppliedCoupon={setAppliedCoupon}
@@ -185,7 +188,11 @@ const ShoppingCartPage = () => {
         </S.DarkWrapper>
       )}
 
-      <CartToast message={cartToastMessage} />
+      <CartToast
+        message={cartToastMessage}
+        variant={cartToastVariant}
+        elevated={isCouponModal || isSendMoneyModal}
+      />
     </S.Wrapper>
   );
 };

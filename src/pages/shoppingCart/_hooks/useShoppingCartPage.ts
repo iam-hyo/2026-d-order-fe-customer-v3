@@ -1,16 +1,11 @@
-import {
-  useState,
-  useMemo,
-  useEffect,
-  useCallback,
-  useRef,
-} from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTE_CONSTANTS } from '@constants/RouteConstants';
 import { accountInfoType, Menu } from '../types/types';
 import { useCartSnapshotStore } from '@stores/cartSnapshotStore';
 import { isCartSnapshot } from '@utils/cartSnapshotGuard';
 import { cartApiV3 } from '../_api/cartApiV3';
+import type { CartToastVariant } from '../_components/CartToast.styled';
 import type { CartItem } from '../../../types/cartWs';
 
 function getApiErrorMessage(err: unknown): string {
@@ -86,11 +81,17 @@ const useShoppingCartPage = () => {
   const setSnapshot = useCartSnapshotStore((s) => s.setSnapshot);
 
   const [cartToastMessage, setCartToastMessage] = useState<string | null>(null);
+  const [cartToastVariant, setCartToastVariant] =
+    useState<CartToastVariant>('neutral');
 
-  const showCartToast = useCallback((msg: string) => {
-    setCartToastMessage(msg);
-    window.setTimeout(() => setCartToastMessage(null), 2000);
-  }, []);
+  const showCartToast = useCallback(
+    (msg: string, variant: CartToastVariant = 'neutral') => {
+      setCartToastVariant(variant);
+      setCartToastMessage(msg);
+      window.setTimeout(() => setCartToastMessage(null), 2000);
+    },
+    [],
+  );
 
   const [errorMessage] = useState<string | null>(null);
   const [accountInfo, setAccountInfo] = useState<accountInfoType | null>(null);
@@ -114,6 +115,8 @@ const useShoppingCartPage = () => {
   /** 새로고침 복원 중복 방지 — pending_payment 진입 시 한 번만 복원 */
   const hasRestoredModal = useRef(false);
   const prevCartStatusRef = useRef<string>('');
+  /** 손님이 모달에서 직접 취소한 경우 외부 취소 토스트 생략 */
+  const paymentClosedByUserRef = useRef(false);
 
   const menusFromSnapshot = useMemo(
     () =>
@@ -174,6 +177,14 @@ const useShoppingCartPage = () => {
       cartStatus !== 'pending_payment' &&
       cartStatus !== ''
     ) {
+      if (
+        cartStatus === 'active' &&
+        !paymentClosedByUserRef.current
+      ) {
+        showCartToast('주문이 취소되었습니다.', 'neutral');
+      }
+      paymentClosedByUserRef.current = false;
+
       paymentInfoRequestId.current += 1;
       paymentInfoInFlight.current = false;
       paymentInfoSucceeded.current = false;
@@ -183,7 +194,7 @@ const useShoppingCartPage = () => {
       setAccountInfo(null);
       sessionStorage.removeItem('paymentStaffCall');
     }
-  }, [cartStatus]);
+  }, [cartStatus, showCartToast]);
 
   // 새로고침 후 결제 모달 소유권 복원 + 상태 변경 시 소유권 초기화
   useEffect(() => {
@@ -339,6 +350,7 @@ const useShoppingCartPage = () => {
 
   const CloseModal = () => setisConfirmModal(false);
   const CloseAcoountModal = () => {
+    paymentClosedByUserRef.current = true;
     paymentInfoRequestId.current += 1;
     paymentInfoInFlight.current = false;
     setIsSendMoneyModal(false);
@@ -447,6 +459,8 @@ const useShoppingCartPage = () => {
     decreaseQuantity,
     deleteItem,
     cartToastMessage,
+    cartToastVariant,
+    showCartToast,
     setIsCouponModal,
     isCouponModal,
     CheckCoupon,

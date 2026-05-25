@@ -11,7 +11,12 @@ const slideDown = keyframes`
   }
 `;
 
-export const Toast = styled.div<{ $elevated?: boolean }>`
+export type CartToastVariant = 'orange' | 'neutral';
+
+export const Toast = styled.div<{
+  $elevated?: boolean;
+  $variant?: CartToastVariant;
+}>`
   ${({ theme }) => theme.fonts.Bold16};
   color: ${({ theme }) => theme.colors.White};
   position: fixed;
@@ -21,7 +26,8 @@ export const Toast = styled.div<{ $elevated?: boolean }>`
   width: calc(100% - 4.5rem);
   max-width: calc(540px - 4.5rem);
   z-index: ${({ $elevated }) => ($elevated ? 100 : 3)};
-  background-color: ${({ theme }) => theme.colors.Orange01};
+  background-color: ${({ theme, $variant }) =>
+    $variant === 'neutral' ? theme.colors.Black02 : theme.colors.Orange01};
   padding: 1rem;
   border-radius: 8px;
   display: flex;
