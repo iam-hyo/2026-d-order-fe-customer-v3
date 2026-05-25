@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import * as S from './MenuListPageHeader.styled';
 
 import { MENULISTPAGE_CONSTANTS } from '../../_constants/menulistpageconstants';
@@ -9,14 +10,13 @@ interface MenuListPageHeaderProps {
   onSelectCategory: (category: 'tableFee' | 'set' | 'menu' | 'drink') => void;
 }
 
-const MenuListPageHeader = ({
-  title,
-  tableNumber,
-  selectedCategory,
-  onSelectCategory,
-}: MenuListPageHeaderProps) => {
+const MenuListPageHeader = forwardRef<HTMLDivElement, MenuListPageHeaderProps>(
+  function MenuListPageHeader(
+    { title, tableNumber, selectedCategory, onSelectCategory },
+    ref,
+  ) {
   return (
-    <S.Wrapper>
+    <S.Wrapper ref={ref}>
       <S.TableInfo>
         <S.Title>{title}</S.Title>
         <S.TableNumber>
@@ -52,6 +52,7 @@ const MenuListPageHeader = ({
       </S.SelectCategory>
     </S.Wrapper>
   );
-};
+  },
+);
 
 export default MenuListPageHeader;

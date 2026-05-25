@@ -1,32 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import copy from '@assets/icons/copy.svg';
-import { toast } from 'react-toastify';
 
 import { ROUTE_CONSTANTS } from '@constants/RouteConstants';
-import { IMAGE_CONSTANTS } from '@constants/ImageConstants';
 import { cartApiV3 } from '../_api/cartApiV3';
-
-const STAFFCALL_TOAST_ID = 'staffcall-toast';
-
-function orangeToastError(message: string) {
-  toast.dismiss(STAFFCALL_TOAST_ID);
-  toast.error(message, {
-    toastId: STAFFCALL_TOAST_ID,
-    icon: <img src={IMAGE_CONSTANTS.CHECK} alt="" />,
-    closeButton: false,
-  });
-}
-
-function orangeToastSuccess(message: string) {
-  toast.dismiss(STAFFCALL_TOAST_ID);
-  toast.success(message, {
-    toastId: STAFFCALL_TOAST_ID,
-    icon: <img src={IMAGE_CONSTANTS.CHECK} alt="" />,
-    closeButton: false,
-  });
-}
+import CartToast from '../_components/CartToast';
 
 interface TotalAccount {
   depositor: string;
@@ -40,6 +19,54 @@ const STAFFCALL_ACCEPT_TIMEOUT_MS = 60 * 60 * 1000;
 const STAFFCALL_HEARTBEAT_MS = 30_000;
 const STAFFCALL_RECONNECT_MS = 3_000;
 const STAFFCALL_MAX_RECONNECT_ATTEMPTS = 5;
+const PAYMENT_STAFF_CALL_KEY = 'paymentStaffCall';
+
+type StoredPaymentStaffCall = {
+  staffCallId: number;
+  subscribeToken: string;
+  step?: Step;
+  lastStatus?: string;
+};
+
+function readStoredPaymentStaffCall(): StoredPaymentStaffCall | null {
+  const raw = sessionStorage.getItem(PAYMENT_STAFF_CALL_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as StoredPaymentStaffCall;
+    if (
+      typeof parsed.staffCallId === 'number' &&
+      typeof parsed.subscribeToken === 'string' &&
+      parsed.subscribeToken.trim()
+    ) {
+      return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function persistPaymentStaffCall(
+  staffCallId: number | null,
+  subscribeToken: string | null,
+  opts?: { step?: Step; lastStatus?: string },
+) {
+  if (staffCallId == null || !subscribeToken?.trim()) {
+    sessionStorage.removeItem(PAYMENT_STAFF_CALL_KEY);
+    return;
+  }
+  const payload: StoredPaymentStaffCall = {
+    staffCallId,
+    subscribeToken: subscribeToken.trim(),
+    step: opts?.step,
+    lastStatus: opts?.lastStatus,
+  };
+  sessionStorage.setItem(PAYMENT_STAFF_CALL_KEY, JSON.stringify(payload));
+}
+
+function clearPaymentStaffCallSession() {
+  sessionStorage.removeItem(PAYMENT_STAFF_CALL_KEY);
+}
 
 function getWsBaseUrl(): string {
   const base = (import.meta.env.VITE_BASE_URL ?? '').replace(/\/+$/, '');
@@ -83,6 +110,17 @@ const SendMoneyModal = ({
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [staffcallWaiting, setStaffcallWaiting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = useCallback((message: string) => {
+    setToastMessage(message);
+  }, []);
+
+  useEffect(() => {
+    if (!toastMessage) return undefined;
+    const timeout = setTimeout(() => setToastMessage(null), 2000);
+    return () => clearTimeout(timeout);
+  }, [toastMessage]);
 
   const wsRef = useRef<WebSocket | null>(null);
   const acceptTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -97,6 +135,16 @@ const SendMoneyModal = ({
   const [staffCallId, setStaffCallId] = useState<number | null>(null);
   const [subscribeToken, setSubscribeToken] = useState<string | null>(null);
   const lastStaffStatusRef = useRef<string | null>(null);
+  const showToastRef = useRef(showToast);
+  showToastRef.current = showToast;
+  const hasRestoredStepRef = useRef(false);
+
+  const withToast = (content: ReactNode) => (
+    <>
+      {content}
+      <CartToast message={toastMessage} elevated />
+    </>
+  );
   const clearHeartbeat = () => {
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
@@ -119,8 +167,28 @@ const SendMoneyModal = ({
     }
   };
 
+  /** 새로고침 후: 진행 중인 송금 확인 요청(staff call) 복원 → 요청 중… 유지 */
   useEffect(() => {
-    if (accountInfo) setStep('account');
+    if (!accountInfo) return;
+    if (hasRestoredStepRef.current) return;
+    hasRestoredStepRef.current = true;
+
+    const stored = readStoredPaymentStaffCall();
+    if (stored) {
+      setStaffCallId(stored.staffCallId);
+      setSubscribeToken(stored.subscribeToken);
+      const lastStatus = String(stored.lastStatus ?? 'PENDING').toUpperCase();
+      lastStaffStatusRef.current = lastStatus;
+      if (lastStatus === 'ACCEPTED' || stored.step === 'staffComing') {
+        setStaffcallWaiting(false);
+        setStep('staffComing');
+      } else {
+        setStaffcallWaiting(true);
+        setStep('confirm');
+      }
+      return;
+    }
+    setStep('account');
   }, [accountInfo]);
 
   useEffect(() => {
@@ -191,30 +259,43 @@ const SendMoneyModal = ({
               cleanupTimers();
               setStaffcallWaiting(false);
               setStep('staffComing');
+              if (staffCallId != null && subscribeToken) {
+                persistPaymentStaffCall(staffCallId, subscribeToken, {
+                  step: 'staffComing',
+                  lastStatus: 'ACCEPTED',
+                });
+              }
             } else if (status === 'PENDING') {
               // 서버 상태가 되돌아갈 수 있으므로 계속 추적
               // ACCEPTED → PENDING 전환일 때만 1회 안내 (연속 PENDING 스팸 방지)
               if (lastStaffStatusRef.current === 'ACCEPTED') {
-                orangeToastError('수락이 취소되었어요.');
+                showToastRef.current('수락이 취소되었어요.');
               }
               lastStaffStatusRef.current = 'PENDING';
               startAcceptTimeout();
               setStaffcallWaiting(true);
               setStep('confirm');
+              if (staffCallId != null && subscribeToken) {
+                persistPaymentStaffCall(staffCallId, subscribeToken, {
+                  step: 'confirm',
+                  lastStatus: 'PENDING',
+                });
+              }
             } else if (status === 'DELETED') {
               cleanupTimers();
-              orangeToastSuccess('요청이 취소되었어요.');
+              showToastRef.current('요청이 취소되었어요.');
               lastStaffStatusRef.current = null;
               setStaffcallWaiting(false);
               setStaffCallId(null);
               setSubscribeToken(null);
+              clearPaymentStaffCallSession();
               closeWs();
               setStep('account');
             }
           }
           if (msg?.type === 'ERROR') {
             cleanupTimers();
-            orangeToastError('요청에 실패했어요. 다시 시도해 주세요.');
+            showToastRef.current('요청에 실패했어요. 다시 시도해 주세요.');
             setStaffcallWaiting(false);
             setStep('confirm');
           }
@@ -254,7 +335,7 @@ const SendMoneyModal = ({
   }, [staffCallId, subscribeToken]);
 
   if (paymentLoading) {
-    return (
+    return withToast(
       <ModalContainer $narrow>
         <ConfirmHead>
           <p>입금 계좌 안내</p>
@@ -265,12 +346,12 @@ const SendMoneyModal = ({
             닫기
           </button>
         </ModalConfirm>
-      </ModalContainer>
+      </ModalContainer>,
     );
   }
 
   if (paymentError) {
-    return (
+    return withToast(
       <ModalContainer $narrow>
         <ConfirmHead>
           <p>입금 계좌 안내</p>
@@ -290,7 +371,7 @@ const SendMoneyModal = ({
             주문하기
           </button>
         </ModalConfirm>
-      </ModalContainer>
+      </ModalContainer>,
     );
   }
 
@@ -321,8 +402,13 @@ const SendMoneyModal = ({
         }
         setStaffCallId(id);
         setSubscribeToken(String(token));
+        persistPaymentStaffCall(id, String(token), {
+          step: 'confirm',
+          lastStatus: 'PENDING',
+        });
       }
       setStaffcallWaiting(true);
+      setStep('confirm');
     } catch (e: unknown) {
       const msg =
         (e as { response?: { data?: { message?: string } } })?.response?.data
@@ -337,7 +423,7 @@ const SendMoneyModal = ({
 
   // 1) 계좌 안내
   if (step === 'account') {
-    return (
+    return withToast(
       <ModalContainer>
         <Modalhead>
           <p>
@@ -368,13 +454,13 @@ const SendMoneyModal = ({
           <button onClick={() => canclePay()}>취소</button>
           <button onClick={() => setStep('confirm')}>송금 완료</button>
         </ModalConfirm>
-      </ModalContainer>
+      </ModalContainer>,
     );
   }
 
   // 2) 송금 완료 확인
   if (step === 'confirm') {
-    return (
+    return withToast(
       <ModalContainer $narrow>
         <ConfirmHead>
           <p>송금을 완료하셨나요?</p>
@@ -396,19 +482,20 @@ const SendMoneyModal = ({
                     staffCallId,
                     subscribeToken,
                   });
-                  orangeToastSuccess('호출을 취소했습니다.');
+                  showToast('호출을 취소했습니다.');
                 } catch (e: unknown) {
                   const msg =
                     (e as { response?: { data?: { message?: string } } })
                       ?.response?.data?.message ||
                     (e as Error)?.message ||
                     '취소에 실패했어요. 잠시 후 다시 시도해 주세요.';
-                  orangeToastError(msg);
+                  showToast(msg);
                 } finally {
                   lastStaffStatusRef.current = null;
                   setStaffcallWaiting(false);
                   setStaffCallId(null);
                   setSubscribeToken(null);
+                  clearPaymentStaffCallSession();
                   closeWs();
                   setStep('account');
                 }
@@ -430,18 +517,18 @@ const SendMoneyModal = ({
               : '송금 확인 요청'}
           </button>
         </ModalConfirm>
-      </ModalContainer>
+      </ModalContainer>,
     );
   }
 
-  return (
+  return withToast(
     <ModalContainer $narrow>
       <StaffComingBody>
         <p>송금 확인을 위해</p>
         <p>직원이 이동 중입니다.</p>
         <p className="highlight">직원이 오면 송금 완료 화면을 보여주세요.</p>
       </StaffComingBody>
-    </ModalContainer>
+    </ModalContainer>,
   );
 };
 

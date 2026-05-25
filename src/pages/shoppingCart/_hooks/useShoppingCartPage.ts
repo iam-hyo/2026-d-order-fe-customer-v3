@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTE_CONSTANTS } from '@constants/RouteConstants';
 import { accountInfoType, Menu } from '../types/types';
 import { useCartSnapshotStore } from '@stores/cartSnapshotStore';
+import { isCartSnapshot } from '@utils/cartSnapshotGuard';
 import { cartApiV3 } from '../_api/cartApiV3';
 import type { CartItem } from '../../../types/cartWs';
 
@@ -82,6 +83,7 @@ function cartItemToMenu(item: CartItem): Menu {
 const useShoppingCartPage = () => {
   const navigate = useNavigate();
   const snapshot = useCartSnapshotStore((s) => s.snapshot);
+  const setSnapshot = useCartSnapshotStore((s) => s.setSnapshot);
 
   const [cartToastMessage, setCartToastMessage] = useState<string | null>(null);
 
@@ -179,6 +181,7 @@ const useShoppingCartPage = () => {
       setPaymentModalLoading(false);
       setPaymentModalError(null);
       setAccountInfo(null);
+      sessionStorage.removeItem('paymentStaffCall');
     }
   }, [cartStatus]);
 
@@ -208,12 +211,14 @@ const useShoppingCartPage = () => {
       hasRestoredModal.current = false;
       sessionStorage.removeItem('paymentOwner');
       sessionStorage.removeItem('paymentAccountInfo');
+      sessionStorage.removeItem('paymentStaffCall');
     }
   }, [cartStatus]);
 
   const shoppingItemResponse = useMemo(() => {
-    if (!snapshot) return undefined;
-    const tableFee = (snapshot.items ?? [])
+    if (!isCartSnapshot(snapshot)) return undefined;
+    const cartSnapshot = snapshot;
+    const tableFee = (cartSnapshot.items ?? [])
       .filter((i) => i.type === 'fee')
       .reduce((acc, cur) => acc + (Number(cur.line_price) || 0), 0);
     return {
@@ -221,19 +226,37 @@ const useShoppingCartPage = () => {
         cart: {
           menus: menusFromSnapshot,
           set_menus: setMenusFromSnapshot,
-          booth_id: snapshot.table_usage.booth_id,
-          id: snapshot.cart.id,
-          table_num: snapshot.table_usage.table_num,
+          booth_id: cartSnapshot.table_usage.booth_id,
+          id: cartSnapshot.cart.id,
+          table_num: cartSnapshot.table_usage.table_num,
         },
-        subtotal: snapshot.summary.subtotal,
+        subtotal: cartSnapshot.summary.subtotal,
         table_fee: tableFee,
-        total_price: snapshot.summary.total,
+        total_price: cartSnapshot.summary.total,
       },
     };
   }, [snapshot, menusFromSnapshot, setMenusFromSnapshot]);
 
+  /** 새로고침 직후 WS 스냅샷 도착 전 cart/detail로 한 번 동기화 */
+  useEffect(() => {
+    let cancelled = false;
+    const syncSnapshot = async () => {
+      if (isCartSnapshot(useCartSnapshotStore.getState().snapshot)) return;
+      try {
+        const detail = await cartApiV3.getDetail();
+        if (!cancelled && detail) setSnapshot(detail);
+      } catch (err) {
+        console.error('[ShoppingCart] cart detail 동기화 실패:', err);
+      }
+    };
+    void syncSnapshot();
+    return () => {
+      cancelled = true;
+    };
+  }, [setSnapshot]);
+
   const FetchShoppingItems = () => {
-    // 화면 갱신은 WS 스냅샷 기준 (REST 재조회는 깜빡임/불일치 원인)
+    // mount 시 useEffect에서 detail 동기화, 이후는 WS 스냅샷 기준
   };
 
   const increaseQuantity = async (id: number) => {
@@ -325,6 +348,7 @@ const useShoppingCartPage = () => {
     // 모달 닫기 = 결제 포기 → 소유권 초기화
     sessionStorage.removeItem('paymentOwner');
     sessionStorage.removeItem('paymentAccountInfo');
+    sessionStorage.removeItem('paymentStaffCall');
     hasRestoredModal.current = false;
 
     // 서버가 이미 pending_payment로 전환했으면 취소 요청 (WS 이벤트 도착 전에도 동작)

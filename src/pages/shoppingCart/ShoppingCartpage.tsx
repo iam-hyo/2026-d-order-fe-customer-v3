@@ -83,6 +83,9 @@ const ShoppingCartPage = () => {
     if (shoppingItemResponse) {
       setMenu(shoppingItemResponse.data.cart.menus || []);
       setSetMenu(shoppingItemResponse.data.cart.set_menus || []);
+    } else {
+      setMenu([]);
+      setSetMenu([]);
     }
   }, [shoppingItemResponse]);
 
@@ -116,22 +119,14 @@ const ShoppingCartPage = () => {
       ) : (
         <>
           <S.ShoppingListWrapper>
-            {menus.map((item) => (
+            {[...menus, ...setMenus].map((item, index, items) => (
               <ShoppingItem
-                key={item.id}
+                key={`${item.menu_name}-${item.id}`}
                 item={item}
                 onIncrease={() => increaseQuantity(item.id)}
                 onDecrease={() => decreaseQuantity(item.id)}
                 deleteItem={() => deleteItem(item.id)}
-              />
-            ))}
-            {setMenus.map((item) => (
-              <ShoppingItem
-                key={item.id}
-                item={item}
-                onIncrease={() => increaseQuantity(item.id)}
-                onDecrease={() => decreaseQuantity(item.id)}
-                deleteItem={() => deleteItem(item.id)}
+                showDivider={index < items.length - 1}
               />
             ))}
           </S.ShoppingListWrapper>

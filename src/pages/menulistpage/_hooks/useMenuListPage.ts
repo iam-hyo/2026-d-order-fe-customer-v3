@@ -79,10 +79,15 @@ const useMenuListPage = () => {
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [boothName, setBoothName] = useState<string>('');
 
+  const categoryHeaderRef = useRef<HTMLDivElement>(null);
   const tableFeeRef = useRef<HTMLDivElement>(null);
   const setRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const drinkRef = useRef<HTMLDivElement>(null);
+  const isScrollSpyLockedRef = useRef(false);
+  const scrollUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const sectionRefs = {
     tableFee: tableFeeRef,
@@ -94,6 +99,8 @@ const useMenuListPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<
     'tableFee' | 'set' | 'menu' | 'drink'
   >('tableFee');
+  const selectedCategoryRef = useRef(selectedCategory);
+  selectedCategoryRef.current = selectedCategory;
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen2, setIsModalOpen2] = useState(false);
@@ -273,47 +280,94 @@ const useMenuListPage = () => {
     return () => clearTimeout(timeout);
   }, [errorToast]);
 
+  const getScrollOffset = () => {
+    const headerHeight =
+      categoryHeaderRef.current?.getBoundingClientRect().height ?? 0;
+    return headerHeight > 0 ? headerHeight : SCROLL_OFFSET;
+  };
+
+  const unlockScrollSpy = () => {
+    isScrollSpyLockedRef.current = false;
+    if (scrollUnlockTimerRef.current) {
+      clearTimeout(scrollUnlockTimerRef.current);
+      scrollUnlockTimerRef.current = null;
+    }
+  };
+
+  const lockScrollSpy = (durationMs = 700) => {
+    isScrollSpyLockedRef.current = true;
+    if (scrollUnlockTimerRef.current) {
+      clearTimeout(scrollUnlockTimerRef.current);
+    }
+    scrollUnlockTimerRef.current = setTimeout(unlockScrollSpy, durationMs);
+  };
+
+  const updateActiveCategoryFromScroll = () => {
+    let activeCategory: 'tableFee' | 'set' | 'menu' | 'drink' | null = null;
+    let maxTop = -Infinity;
+    const scrollOffset = getScrollOffset();
+
+    const scrollTop = window.scrollY;
+    const scrollBottom = scrollTop + window.innerHeight;
+    const pageHeight = document.documentElement.scrollHeight;
+
+    if (pageHeight - scrollBottom < 10) {
+      if (selectedCategoryRef.current !== 'drink') {
+        setSelectedCategory('drink');
+      }
+      return;
+    }
+
+    Object.entries(sectionRefs).forEach(([key, ref]) => {
+      if (ref.current) {
+        const rectTop = ref.current.getBoundingClientRect().top;
+        if (rectTop <= scrollOffset && rectTop > maxTop) {
+          maxTop = rectTop;
+          activeCategory = key as 'tableFee' | 'set' | 'menu' | 'drink';
+        }
+      }
+    });
+
+    if (
+      activeCategory &&
+      activeCategory !== selectedCategoryRef.current
+    ) {
+      setSelectedCategory(activeCategory);
+    }
+  };
+
   const handleScrollTo = (category: 'tableFee' | 'set' | 'menu' | 'drink') => {
     setSelectedCategory(category);
     const target = sectionRefs[category].current;
-    if (target) {
-      const top = target.offsetTop - SCROLL_OFFSET;
-      window.scrollTo({ top, behavior: 'smooth' });
-    }
+    if (!target) return;
+
+    lockScrollSpy();
+    const top =
+      window.scrollY +
+      target.getBoundingClientRect().top -
+      getScrollOffset();
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   };
 
   useEffect(() => {
     const handleScroll = () => {
-      let activeCategory: 'tableFee' | 'set' | 'menu' | 'drink' | null = null;
-      let maxTop = -Infinity;
+      if (isScrollSpyLockedRef.current) return;
+      updateActiveCategoryFromScroll();
+    };
 
-      const scrollTop = window.scrollY;
-      const scrollBottom = scrollTop + window.innerHeight;
-      const pageHeight = document.documentElement.scrollHeight;
-
-      if (pageHeight - scrollBottom < 10) {
-        setSelectedCategory('drink');
-        return;
-      }
-
-      Object.entries(sectionRefs).forEach(([key, ref]) => {
-        if (ref.current) {
-          const rectTop = ref.current.getBoundingClientRect().top;
-          if (rectTop <= SCROLL_OFFSET && rectTop > maxTop) {
-            maxTop = rectTop;
-            activeCategory = key as 'tableFee' | 'set' | 'menu' | 'drink';
-          }
-        }
-      });
-
-      if (activeCategory && activeCategory !== selectedCategory) {
-        setSelectedCategory(activeCategory);
-      }
+    const handleScrollEnd = () => {
+      unlockScrollSpy();
+      updateActiveCategoryFromScroll();
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [selectedCategory]);
+    window.addEventListener('scrollend', handleScrollEnd, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scrollend', handleScrollEnd);
+      unlockScrollSpy();
+    };
+  }, []);
 
   const handleOpenModal = (item: any) => {
     if (item.category === 'tableFee' && item.soldOut) return;
@@ -400,6 +454,7 @@ const useMenuListPage = () => {
     boothName,
     tableNum,
     cartCount,
+    categoryHeaderRef,
     sectionRefs,
     selectedCategory,
     handleScrollTo,

@@ -1,13 +1,12 @@
-import { useState } from "react";
-import styled from "styled-components";
-import close from "@assets/icons/close.svg";
-import plus from "@assets/icons/plus.svg";
-import PlusDisable from "@assets/icons/PlusDisavle.svg";
-import minus from "@assets/icons/minus.svg";
-import minusDisavle from "@assets/icons/minusDisable.svg";
-import Line from "@assets/images/Line3.svg";
-import { Menu } from "../types/types";
-import { MENULISTPAGE_CONSTANTS } from "@pages/menulistpage/_constants/menulistpageconstants";
+import { useState } from 'react';
+import styled from 'styled-components';
+import close from '@assets/icons/close.svg';
+import plus from '@assets/icons/plus.svg';
+import PlusDisable from '@assets/icons/PlusDisavle.svg';
+import minus from '@assets/icons/minus.svg';
+import minusDisavle from '@assets/icons/minusDisable.svg';
+import { Menu } from '../types/types';
+import { MENULISTPAGE_CONSTANTS } from '@pages/menulistpage/_constants/menulistpageconstants';
 
 const DEFAULT_FOOD_IMAGE = MENULISTPAGE_CONSTANTS.MENUITEMS.IMAGES.NONIMAGE;
 
@@ -16,6 +15,7 @@ interface ShoppingListProps {
   onIncrease: () => void;
   onDecrease: () => void;
   deleteItem: () => void;
+  showDivider?: boolean;
 }
 
 const ShoppingItem = ({
@@ -23,14 +23,13 @@ const ShoppingItem = ({
   onIncrease,
   onDecrease,
   deleteItem,
+  showDivider = true,
 }: ShoppingListProps) => {
-  const [imgSrc, setImgSrc] = useState(
-    item.menu_image || DEFAULT_FOOD_IMAGE
-  );
+  const [imgSrc, setImgSrc] = useState(item.menu_image || DEFAULT_FOOD_IMAGE);
   const isDefaultImage = imgSrc === DEFAULT_FOOD_IMAGE;
 
   return (
-    <>
+    <ItemRoot>
       <ShoppingItemWrapper>
         <ImgWrapper $isDefaultImage={isDefaultImage}>
           <img
@@ -49,22 +48,22 @@ const ShoppingItem = ({
 
           <div className="contentWrapper">
             {item.menu_price ? (
-              <PriceText>{item.menu_price.toLocaleString("ko-KR")}</PriceText>
+              <PriceText>{item.menu_price.toLocaleString('ko-KR')}</PriceText>
             ) : (
               <PriceWrapper>
                 <PriceText>
-                  {item.discounted_price.toLocaleString("ko-KR")}
+                  {item.discounted_price.toLocaleString('ko-KR')}
                 </PriceText>
                 <DiscountText>
                   {Math.round(
                     ((item.original_price - item.discounted_price) /
                       item.original_price) *
-                      100
+                      100,
                   ) > 0
                     ? `${Math.round(
                         ((item.original_price - item.discounted_price) /
                           item.original_price) *
-                          100
+                          100,
                       )} % 할인`
                     : null}
                 </DiscountText>
@@ -80,14 +79,10 @@ const ShoppingItem = ({
               <AmountText>{item.quantity}</AmountText>
               <button
                 onClick={onIncrease}
-                disabled={
-                  item.quantity === item.menu_amount
-                }
+                disabled={item.quantity === item.menu_amount}
               >
                 <img
-                  src={
-                    item.quantity === item.menu_amount ? PlusDisable : plus
-                  }
+                  src={item.quantity === item.menu_amount ? PlusDisable : plus}
                   alt="수량 증가"
                 />
               </button>
@@ -95,12 +90,33 @@ const ShoppingItem = ({
           </div>
         </div>
       </ShoppingItemWrapper>
-      <img src={Line} alt="구분선" style={{ width: "100%" }} />
-    </>
+      {showDivider && <ItemDivider aria-hidden />}
+    </ItemRoot>
   );
 };
 
 export default ShoppingItem;
+
+const ItemRoot = styled.div`
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ItemDivider = styled.div`
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+  height: 1px;
+  background: repeating-linear-gradient(
+    to right,
+    rgba(16, 16, 16, 0.3) 0,
+    rgba(16, 16, 16, 0.3) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+`;
 
 const ShoppingItemWrapper = styled.div`
   display: flex;
@@ -139,7 +155,8 @@ const ImgWrapper = styled.div<{ $isDefaultImage?: boolean }>`
     width: 100%;
     height: 100%;
     border-radius: 7px;
-    object-fit: ${({ $isDefaultImage }) => ($isDefaultImage ? 'contain' : 'cover')};
+    object-fit: ${({ $isDefaultImage }) =>
+      $isDefaultImage ? 'contain' : 'cover'};
     object-position: center;
   }
 `;

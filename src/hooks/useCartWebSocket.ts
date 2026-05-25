@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
-import type { CartWsPayload, CartSnapshotData } from '../types/cartWs';
+import type { CartWsPayload } from '../types/cartWs';
 import { useCartSnapshotStore } from '@stores/cartSnapshotStore';
+import { isCartSnapshot } from '@utils/cartSnapshotGuard';
+import { handleCartMerged } from '@services/cartTableMerge';
 import { redirectToLoginAfterTableReset } from '@services/tableReEntry';
 
 const AUTH_FAILURE_CLOSE_CODE = 4001;
@@ -102,8 +104,24 @@ export function useCartWebSocket(tableUsageId: string | null) {
             return;
           }
 
-          if (payload?.data && typeof payload.data === 'object') {
-            setSnapshot(payload.data as CartSnapshotData);
+          if (payload?.type === 'CART_MERGED') {
+            console.warn('[CartWS] 🔀 테이블 병합 감지 → 토스트 후 재입장 화면 이동');
+            intentionalCloseRef.current = true;
+            clearHeartbeat();
+            if (reconnectTimeoutRef.current) {
+              clearTimeout(reconnectTimeoutRef.current);
+              reconnectTimeoutRef.current = null;
+            }
+            if (wsRef.current) {
+              wsRef.current.close();
+              wsRef.current = null;
+            }
+            handleCartMerged();
+            return;
+          }
+
+          if (isCartSnapshot(payload?.data)) {
+            setSnapshot(payload.data);
           }
         } catch (err) {
           console.error('[CartWS] ❌ 파싱 에러:', err, event.data);

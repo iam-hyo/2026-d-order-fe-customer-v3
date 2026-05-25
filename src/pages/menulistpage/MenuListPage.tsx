@@ -21,6 +21,7 @@ const MenulistPage = () => {
     boothName,
     tableNum,
     cartCount,
+    categoryHeaderRef,
     sectionRefs,
     selectedCategory,
     handleScrollTo,
@@ -57,6 +58,7 @@ const MenulistPage = () => {
       />
       {tableNum !== null && (
         <MenuListPageHeader
+          ref={categoryHeaderRef}
           title={boothName}
           tableNumber={tableNum}
           onSelectCategory={handleScrollTo}

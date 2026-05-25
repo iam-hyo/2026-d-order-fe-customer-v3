@@ -11,7 +11,7 @@ const slideDown = keyframes`
   }
 `;
 
-export const Toast = styled.div`
+export const Toast = styled.div<{ $elevated?: boolean }>`
   ${({ theme }) => theme.fonts.Bold16};
   color: ${({ theme }) => theme.colors.White};
   position: fixed;
@@ -20,7 +20,7 @@ export const Toast = styled.div`
   transform: translate(-50%, 0);
   width: calc(100% - 4.5rem);
   max-width: calc(540px - 4.5rem);
-  z-index: 3;
+  z-index: ${({ $elevated }) => ($elevated ? 100 : 3)};
   background-color: ${({ theme }) => theme.colors.Orange01};
   padding: 1rem;
   border-radius: 8px;

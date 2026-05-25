@@ -15,7 +15,13 @@ export type CartWsEventType =
   | "CART_PENDING_EXPIRED"
   | "CART_PAYMENT_CONFIRMED"
   | "CART_RESET"
+  | "CART_MERGED"
   | "ERROR";
+
+export interface CartMergedData {
+  table_usage_id: number;
+  new_table_usage_id: number;
+}
 
 export interface CartWsPayload<T = CartSnapshotData> {
   type: CartWsEventType;

@@ -24,6 +24,7 @@ export function redirectToLoginAfterTableReset(): void {
   sessionStorage.removeItem('cartId');
   sessionStorage.removeItem('paymentOwner');
   sessionStorage.removeItem('paymentAccountInfo');
+  sessionStorage.removeItem('paymentStaffCall');
   useCartSnapshotStore.getState().setSnapshot(null);
 
   const boothId = sessionStorage.getItem('boothId');

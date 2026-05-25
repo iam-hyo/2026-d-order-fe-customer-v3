@@ -1,4 +1,5 @@
 import { instance } from '@services/instance';
+import { isCartSnapshot } from '@utils/cartSnapshotGuard';
 import type { CartSnapshotData } from '../../../types/cartWs';
 
 const getTableUsageId = (): number | null => {
@@ -8,16 +9,6 @@ const getTableUsageId = (): number | null => {
 };
 
 const getBoothId = (): string | null => sessionStorage.getItem('boothId');
-
-function isCartSnapshot(obj: unknown): obj is CartSnapshotData {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'cart' in obj &&
-    'items' in obj &&
-    Array.isArray((obj as CartSnapshotData).items)
-  );
-}
 
 /**
  * v3 장바구니 REST API (실제 변경은 여기서, WS는 스냅샷 수신만)
