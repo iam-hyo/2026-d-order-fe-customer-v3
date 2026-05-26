@@ -883,7 +883,7 @@ const InfoText = styled.p`
 // 어두운 밤하늘 위의 크림 종이/등롱 메타포.
 // 살짝 따뜻한 톤(피치/크림)으로 화이트 느낌 회피.
 // FULL은 opacity 떨어뜨리지 않고 배경을 한 단계 어둡게(토스트 종이).
-const CARD_BG = 'rgba(249, 234, 209, 0.96)';
+const CARD_BG = 'rgba(240, 238, 252, 0.96)';
 // FULL: 크림을 탈채도시킨 밝은 웜그레이. "바랜 종이" 톤으로 마감 표현.
 const CARD_BG_FULL = 'rgba(230, 224, 216, 0.94)';
 const CARD_BORDER = 'rgba(70, 45, 25, 0.1)';
