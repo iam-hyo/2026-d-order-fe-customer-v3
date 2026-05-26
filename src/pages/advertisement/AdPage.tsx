@@ -241,6 +241,7 @@ const AdPage = () => {
   const touchStartY = useRef<number>(0);
 
 const isComingSoon = activeDay !== '2026-05-26' && activeDay > getTodayStr();
+  const isTodayBeforeOpen = activeDay === getTodayStr() && new Date().getHours() < 17;
 
   // [MOCK ↔ API 전환 지점] 현재 실 API 사용.
   // mock 으로 돌리려면 아래 API 한 줄을 주석 처리하고 mock 블록 주석 해제.
@@ -273,6 +274,7 @@ const isComingSoon = activeDay !== '2026-05-26' && activeDay > getTodayStr();
     const newIdx = DATE_OPTIONS.findIndex((d) => d.value === newDate);
     setSlideDir(newIdx > curIdx ? 'right' : 'left');
     setActiveDay(newDate);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -485,12 +487,10 @@ const isComingSoon = activeDay !== '2026-05-26' && activeDay > getTodayStr();
           ) : (
             <BoothGrid key={activeDay} $slideDir={slideDir}>
               {displayItems.map((b, idx) => {
-                const isFull = !isComingSoon && b.status === 'FULL';
-                // Bar shows remaining percentage (remaining / capacity)
-                // 6/50 remaining → 12% fill
+                const isFull = !isComingSoon && !isTodayBeforeOpen && b.status === 'FULL';
                 const progressPct = b.capacity > 0 ? (b.remaining / b.capacity) * 100 : 0;
                 return (
-                  <BoothCard key={idx} $isFull={isFull}>
+                  <BoothCard key={idx} $isFull={isFull} $glass={USE_GLASS_CARD}>
                     <BoothCardImageBox>
                       {b.boothImage ? (
                         <BoothCardImg src={b.boothImage} alt={b.name} />
@@ -499,10 +499,9 @@ const isComingSoon = activeDay !== '2026-05-26' && activeDay > getTodayStr();
                       )}
                     </BoothCardImageBox>
                     <BoothCardBody>
-                      {/* Name + status badge on same row */}
                       <BoothNameRow>
                         <BoothCardName>{b.name}</BoothCardName>
-                        {!isComingSoon && (
+                        {!isComingSoon && !isTodayBeforeOpen && (
                           <StatusBadge $status={b.status}>{STATUS_LABELS[b.status]}</StatusBadge>
                         )}
                       </BoothNameRow>
@@ -510,18 +509,29 @@ const isComingSoon = activeDay !== '2026-05-26' && activeDay > getTodayStr();
 
                       {isComingSoon ? (
                         <BoothCardPreview>총 {b.capacity}석</BoothCardPreview>
+                      ) : isTodayBeforeOpen ? (
+                        <OpenSoonMsg>17시부터 공개 · 총 {b.capacity}석</OpenSoonMsg>
                       ) : (
-                        <>
-                          <RemainingLabel>남은 테이블</RemainingLabel>
-                          <BoothProgressRow>
-                            <BoothProgressBar $status={b.status}>
-                              <BoothProgressFill $pct={progressPct} $status={b.status} />
-                            </BoothProgressBar>
+                        <RemainingLabel>남은 테이블</RemainingLabel>
+                      )}
+
+                      {!isComingSoon && (
+                        <BoothProgressRow>
+                          <BoothProgressBar
+                            $status={isTodayBeforeOpen ? 'AVAILABLE' : b.status}
+                            $disabled={isTodayBeforeOpen}
+                          >
+                            <BoothProgressFill
+                              $pct={isTodayBeforeOpen ? 0 : progressPct}
+                              $status={isTodayBeforeOpen ? 'AVAILABLE' : b.status}
+                            />
+                          </BoothProgressBar>
+                          {!isTodayBeforeOpen && (
                             <BoothCapacityText $status={b.status}>
                               {isFull && '🔥'}{b.remaining}<span>/{b.capacity}</span>
                             </BoothCapacityText>
-                          </BoothProgressRow>
-                        </>
+                          )}
+                        </BoothProgressRow>
                       )}
                     </BoothCardBody>
                   </BoothCard>
@@ -848,7 +858,7 @@ const ReloadIcon = styled.span<{ $spinning: boolean }>`
 const BoothGrid = styled.div<{ $slideDir: SlideDir }>`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 12px;
   padding: 0 16px;
   animation: ${({ $slideDir }) =>
     $slideDir === 'right'
@@ -879,37 +889,48 @@ const InfoText = styled.p`
 
 // ── Booth card ─────────────────────────────────────────────
 
-// ── 카드 팔레트 ──
-// 어두운 밤하늘 위의 크림 종이/등롱 메타포.
-// 살짝 따뜻한 톤(피치/크림)으로 화이트 느낌 회피.
-// FULL은 opacity 떨어뜨리지 않고 배경을 한 단계 어둡게(토스트 종이).
-const CARD_BG = 'rgba(240, 238, 252, 0.96)';
-// FULL: 크림을 탈채도시킨 밝은 웜그레이. "바랜 종이" 톤으로 마감 표현.
-const CARD_BG_FULL = 'rgba(230, 224, 216, 0.94)';
-const CARD_BORDER = 'rgba(70, 45, 25, 0.1)';
-const CARD_TEXT = 'rgba(28, 18, 12, 0.94)';
-const CARD_TEXT_MUTED = 'rgba(54, 38, 24, 0.72)';
-const CARD_TEXT_DIM = 'rgba(70, 50, 30, 0.6)';
+// ─── A/B 카드 디자인 ────────────────────────────────────────
+// false → 라벤더 (기존)  /  true → 리퀴드 글라스
+const USE_GLASS_CARD = true;
 
-const BoothCard = styled.div<{ $isFull: boolean }>`
+// 라벤더 팔레트 (USE_GLASS_CARD = false 시 활성)
+// const CARD_BG         = 'rgba(240, 238, 252, 0.96)';
+// const CARD_BG_FULL    = 'rgba(230, 224, 216, 0.94)';
+// const CARD_BORDER     = 'rgba(70, 45, 25, 0.1)';
+// const CARD_TEXT       = 'rgba(28, 18, 12, 0.94)';
+// const CARD_TEXT_MUTED = 'rgba(54, 38, 24, 0.72)';
+// const CARD_TEXT_DIM   = 'rgba(70, 50, 30, 0.6)';
+
+const CARD_BG          = USE_GLASS_CARD ? 'rgba(255, 255, 255, 0.09)' : 'rgba(240, 238, 252, 0.96)';
+const CARD_BG_FULL     = USE_GLASS_CARD ? 'rgba(255, 255, 255, 0.05)' : 'rgba(230, 224, 216, 0.94)';
+const CARD_BORDER      = USE_GLASS_CARD ? 'rgba(255, 255, 255, 0.18)' : 'rgba(70, 45, 25, 0.1)';
+const CARD_TEXT        = USE_GLASS_CARD ? 'rgba(255, 255, 255, 0.95)' : 'rgba(28, 18, 12, 0.94)';
+const CARD_TEXT_MUTED  = USE_GLASS_CARD ? 'rgba(255, 255, 255, 0.62)' : 'rgba(54, 38, 24, 0.72)';
+const CARD_TEXT_DIM    = USE_GLASS_CARD ? 'rgba(255, 255, 255, 0.38)' : 'rgba(70, 50, 30, 0.6)';
+const CARD_PROGRESS_BG = USE_GLASS_CARD ? 'rgba(255, 255, 255, 0.14)' : 'rgba(50, 35, 25, 0.16)';
+const CARD_IMAGE_BG    = USE_GLASS_CARD ? 'rgba(255, 255, 255, 0.1)'  : 'rgba(45, 30, 20, 0.07)';
+
+const BoothCard = styled.div<{ $isFull: boolean; $glass: boolean }>`
   display: flex;
   align-items: stretch;
   gap: 10px;
-  padding: 12px;
+  padding: 14px;
   background: ${({ $isFull }) => ($isFull ? CARD_BG_FULL : CARD_BG)};
   border: 1px solid ${CARD_BORDER};
-  border-radius: 14px;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.6) inset,
-    0 6px 18px rgba(0, 0, 0, 0.38),
-    0 1px 3px rgba(0, 0, 0, 0.25);
+  border-radius: 16px;
+  backdrop-filter: ${({ $glass }) => ($glass ? 'blur(18px) saturate(180%)' : 'none')};
+  -webkit-backdrop-filter: ${({ $glass }) => ($glass ? 'blur(18px) saturate(180%)' : 'none')};
+  box-shadow: ${({ $glass }) =>
+    $glass
+      ? 'inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 32px rgba(0,0,0,0.5)'
+      : 'inset 0 1px 0 rgba(255,255,255,0.6), 0 6px 18px rgba(0,0,0,0.38), 0 1px 3px rgba(0,0,0,0.25)'};
 `;
 
 const BoothCardImageBox = styled.div`
-  width: 76px;
-  min-height: 76px;
+  width: 90px;
+  min-height: 90px;
   border-radius: 10px;
-  background: rgba(45, 30, 20, 0.07);
+  background: ${CARD_IMAGE_BG};
   flex-shrink: 0;
   overflow: hidden;
   position: relative;
@@ -976,7 +997,7 @@ const StatusBadge = styled.span<{ $status: Status }>`
 `;
 
 const BoothCardLocation = styled.span`
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   color: ${CARD_TEXT_MUTED};
   white-space: nowrap;
@@ -1002,19 +1023,35 @@ const BoothCardPreview = styled.span`
   margin-top: 4px;
 `;
 
+const OpenSoonMsg = styled.span`
+  font-size: 11px;
+  font-weight: 600;
+  color: ${CARD_TEXT_MUTED};
+  font-family: 'SUIT', sans-serif;
+  margin-top: 4px;
+  letter-spacing: -0.01em;
+`;
+
 const BoothProgressRow = styled.div`
   display: flex;
   align-items: center;
   gap: 7px;
+  margin-top: auto;
+  padding-top: 4px;
 `;
 
-const BoothProgressBar = styled.div<{ $status: Status }>`
+const BoothProgressBar = styled.div<{ $status: Status; $disabled?: boolean }>`
   flex: 1;
   height: 4px;
-  background: ${({ $status }) =>
-    $status === 'FULL' ? 'rgba(185, 28, 28, 0.18)' : 'rgba(50, 35, 25, 0.16)'};
+  background: ${({ $status, $disabled }) =>
+    $disabled
+      ? 'rgba(200, 200, 220, 0.18)'
+      : USE_GLASS_CARD
+      ? CARD_PROGRESS_BG
+      : $status === 'FULL' ? 'rgba(185, 28, 28, 0.18)' : 'rgba(50, 35, 25, 0.16)'};
   border-radius: 100px;
   overflow: hidden;
+  opacity: ${({ $disabled }) => ($disabled ? 0.4 : 1)};
 `;
 
 const BoothProgressFill = styled.div<{ $pct: number; $status: Status }>`
