@@ -151,13 +151,13 @@ const useShoppingCartPage = () => {
 
   // 디버깅: snapshot/cartStatus 변화 추적
   useEffect(() => {
-    console.log('[ShoppingCart] 📦 snapshot 변경:', {
-      cartStatus,
-      isOrderable,
-      cartId: snapshot?.cart?.id,
-      itemCount: snapshot?.items?.length,
-      total: snapshot?.summary?.total,
-    });
+    // console.log('[ShoppingCart] 📦 snapshot 변경:', {
+    //   cartStatus,
+    //   isOrderable,
+    //   cartId: snapshot?.cart?.id,
+    //   itemCount: snapshot?.items?.length,
+    //   total: snapshot?.summary?.total,
+    // });
   }, [snapshot]);
 
   // 결제 확인 완료 시 주문완료 페이지로 이동
@@ -257,7 +257,7 @@ const useShoppingCartPage = () => {
         const detail = await cartApiV3.getDetail();
         if (!cancelled && detail) setSnapshot(detail);
       } catch (err) {
-        console.error('[ShoppingCart] cart detail 동기화 실패:', err);
+        // console.error('[ShoppingCart] cart detail 동기화 실패:', err);
       }
     };
     void syncSnapshot();
@@ -276,7 +276,7 @@ const useShoppingCartPage = () => {
     try {
       await cartApiV3.updateQuantity(id, item.quantity + 1);
     } catch (err) {
-      console.error(err);
+      // console.error(err);
       showCartToast(getApiErrorMessage(err));
     }
   };
@@ -287,7 +287,7 @@ const useShoppingCartPage = () => {
     try {
       await cartApiV3.updateQuantity(id, item.quantity - 1);
     } catch (err) {
-      console.error(err);
+      // console.error(err);
       showCartToast(getApiErrorMessage(err));
     }
   };
@@ -296,7 +296,7 @@ const useShoppingCartPage = () => {
     try {
       await cartApiV3.deleteItem(id);
     } catch (err) {
-      console.error(err);
+      // console.error(err);
       showCartToast(getApiErrorMessage(err));
     }
   };
@@ -366,8 +366,8 @@ const useShoppingCartPage = () => {
     // 서버가 이미 pending_payment로 전환했으면 취소 요청 (WS 이벤트 도착 전에도 동작)
     if (cartStatus === 'pending_payment' || paymentInfoSucceeded.current) {
       paymentInfoSucceeded.current = false;
-      cartApiV3.paymentCancel().catch((err) => {
-        console.error('[ShoppingCart] payment-cancel 실패:', err);
+      cartApiV3.paymentCancel().catch(() => {
+        // console.error('[ShoppingCart] payment-cancel 실패:', err);
       });
     }
   };
@@ -423,13 +423,13 @@ const useShoppingCartPage = () => {
       throw new Error('테이블 또는 장바구니 정보가 없습니다.');
     }
 
-    console.log('[ShoppingCart] 💳 결제 확인 요청:', { tableId, cartId });
+    // console.log('[ShoppingCart] 💳 결제 확인 요청:', { tableId, cartId });
     const result = await cartApiV3.requestPaymentConfirmation({
       tableId,
       cartId,
       category: 'GENERAL',
     });
-    console.log('[ShoppingCart] 💳 결제 확인 응답:', result);
+    // console.log('[ShoppingCart] 💳 결제 확인 응답:', result);
     return result;
   }, [snapshot?.table_usage?.table_id, snapshot?.cart?.id]);
 
@@ -471,7 +471,9 @@ const useShoppingCartPage = () => {
         .then(() => {
           setAppliedCouponCode(null);
         })
-        .catch(console.error);
+        .catch(() => {
+          // console.error(err);
+        });
     },
     appliedCouponCode,
     cartStatus,

@@ -82,7 +82,7 @@ const useMenuListPageWithDummy = () => {
         const hasItems = await CartService.exists(cartNumber);
         setCartCount(hasItems);
       } catch (e) {
-        console.error('cart exists check failed', e);
+        // console.error('cart exists check failed', e);
         setCartCount(false);
       }
     };
@@ -109,7 +109,7 @@ const useMenuListPageWithDummy = () => {
         setMenuItems(allItemsSorted);
         setBoothName('더미 부스');
       } catch (e) {
-        console.error(e);
+        // console.error(e);
         setMenuItems([]);
       } finally {
         setIsLoading(false);
@@ -199,7 +199,7 @@ const useMenuListPageWithDummy = () => {
       const has = await CartService.exists(cid);
       setCartCount(has);
     } catch (e) {
-      console.error('refreshCartCount failed', e);
+      // console.error('refreshCartCount failed', e);
     }
   };
 
@@ -232,7 +232,7 @@ const useMenuListPageWithDummy = () => {
         setIsModalOpen2(true);
       }, 300);
     } catch (e: any) {
-      console.error(e);
+      // console.error(e);
       setErrorToast(
         e?.response?.data?.message ||
           '장바구니 담기 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.',

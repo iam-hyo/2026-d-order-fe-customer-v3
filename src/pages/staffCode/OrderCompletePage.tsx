@@ -18,11 +18,11 @@ const OrderCompletePage = () => {
   useEffect(() => {
     cartApiV3.reset()
       .then(() => {
-        console.log('[OrderComplete] 장바구니 reset 성공');
+        // console.log('[OrderComplete] 장바구니 reset 성공');
         setSnapshot(null);
       })
-      .catch((err) => {
-        console.error('[OrderComplete] 장바구니 reset 실패:', err);
+      .catch(() => {
+        // console.error('[OrderComplete] 장바구니 reset 실패:', err);
         setSnapshot(null);
       });
   }, [setSnapshot]);

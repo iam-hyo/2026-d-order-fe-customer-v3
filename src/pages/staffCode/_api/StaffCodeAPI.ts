@@ -128,7 +128,7 @@ export const fetchTableOrderInfo = async (
   } catch (error: unknown) {
     if (error instanceof AxiosError) {
       if (error.response?.status === 404) return null;
-      console.error("[ORDER_CHECK][GET] AxiosError", error.response?.data);
+      // console.error("[ORDER_CHECK][GET] AxiosError", error.response?.data);
       if (error.response?.status === 400) {
         throw new Error(
           error.response?.data?.message ||
@@ -165,7 +165,7 @@ export const createOrderWithStaffCode = async (
     if (cartId === undefined) cartId = getCartIdFromEverywhere();
 
     if (!Number.isFinite(cartId)) {
-      console.error("[ORDER_CHECK][POST] ❌ cart_id 누락/비정상:", cartId);
+      // console.error("[ORDER_CHECK][POST] ❌ cart_id 누락/비정상:", cartId);
       alert(
         "cart_id를 찾을 수 없습니다. URL에 ?cart_id=숫자를 포함하거나 sessionStorage에 cartId 또는 cart_id를 저장하세요."
       );
@@ -209,14 +209,14 @@ export const createOrderWithStaffCode = async (
         alert("부스 정보(Booth-ID)가 올바르지 않거나 헤더가 누락되었습니다.");
         return false;
       }
-      console.error(
-        "[ORDER_CHECK][POST] AxiosError",
-        status,
-        error.response?.data
-      );
+      // console.error(
+      //   "[ORDER_CHECK][POST] AxiosError",
+      //   status,
+      //   error.response?.data
+      // );
       return false;
     }
-    console.error("[ORDER_CHECK][POST] Unknown error", error);
+    // console.error("[ORDER_CHECK][POST] Unknown error", error);
     return false;
   }
 };

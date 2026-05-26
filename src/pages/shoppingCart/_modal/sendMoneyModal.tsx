@@ -261,11 +261,11 @@ const SendMoneyModal = ({
           const msg = JSON.parse(String(evt.data)) as Record<string, unknown>;
           if (msg?.type === 'PONG') return;
           if (msg?.type === 'SUBSCRIBED') {
-            console.log('[StaffCall][WS] ✅ SUBSCRIBED:', msg);
+            // console.log('[StaffCall][WS] ✅ SUBSCRIBED:', msg);
             return;
           }
           if (msg?.type === 'STAFF_CALL_STATUS') {
-            console.log('[StaffCall][WS] STAFF_CALL_STATUS:', msg);
+            // console.log('[StaffCall][WS] STAFF_CALL_STATUS:', msg);
             const status = String(msg.status ?? '').toUpperCase();
             if (status === 'ACCEPTED') {
               lastStaffStatusRef.current = 'ACCEPTED';

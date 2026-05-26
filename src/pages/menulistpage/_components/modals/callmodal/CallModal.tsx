@@ -20,7 +20,7 @@ const CallModal = ({ onClose, onNotify }: CallModalProps) => {
       onNotify('직원을 호출했어요.');
       onClose();
     } catch (e: unknown) {
-      console.error(e);
+      // console.error(e);
       const msg =
         (e as { response?: { data?: { message?: string } } })?.response?.data
           ?.message ??
