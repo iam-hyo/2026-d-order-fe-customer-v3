@@ -626,9 +626,9 @@ const ConfirmWarnings = styled.div`
   }
 `;
 
-const waitPulse = keyframes`
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+const colorBreathe = keyframes`
+  0%, 100% { color: #ff6e3f; opacity: 1; }
+  50% { color: #8a8a8a; opacity: 0.75; }
 `;
 
 const dotBlink = keyframes`
@@ -645,9 +645,9 @@ const WaitingNotice = styled.div`
   .main {
     display: inline-flex;
     align-items: center;
-    color: ${({ theme }) => theme.colors.Black01};
+    color: ${({ theme }) => theme.colors.Orange01};
     ${({ theme }) => theme.fonts.SemiBold12}
-    animation: ${waitPulse} 1.6s ease-in-out infinite;
+    animation: ${colorBreathe} 1.8s ease-in-out infinite;
   }
 
   .sub {
