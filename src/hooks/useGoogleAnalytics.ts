@@ -57,8 +57,11 @@ export const useGoogleAnalytics = () => {
       // 로컬스토리지에 부스 ID 저장 (다른 컴포넌트에서 사용할 수 있도록)
       sessionStorage.setItem("boothId", boothId);
 
-      // 부스 ID를 GA4에 커스텀 매개변수로 설정
+      // 부스 ID를 GA4에 커스텀 매개변수로 설정 (이벤트 범위)
       ReactGA.set({ booth_id: boothId });
+
+      // 부스 ID를 user property로 설정 (사용자 범위) → GA4에서 세션/사용자 단위로 부스별 세그먼트 가능
+      ReactGA.gtag("set", "user_properties", { booth_id: boothId });
 
       // 부스 접속 이벤트 전송 (QR 코드 스캔 추적) - 한 번만
       ReactGA.event("booth_access", {
