@@ -18,6 +18,18 @@ const MEASUREMENT_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID;
 let isGAInitialized = false; // GA 초기화 상태 추적
 let boothAccessTracked = false; // 부스 접속 이벤트 중복 방지
 
+const PAGE_TITLES: Record<string, string> = {
+  "/": "로그인",
+  "/menu-list": "메뉴판",
+  "/shopping-list": "장바구니",
+  "/order-list": "주문내역",
+  "/order-complete": "주문완료",
+  "/staff-code": "직원호출",
+  "/ad": "부스 현황",
+  "/error": "오류",
+  "/devpage": "개발",
+};
+
 export const useGoogleAnalytics = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -67,10 +79,13 @@ export const useGoogleAnalytics = () => {
       // 로컬스토리지에서 부스 ID 가져오기 (URL에 없어도 유지)
       const storedBoothId = sessionStorage.getItem("boothId");
 
+      const pageTitle = PAGE_TITLES[location.pathname] ?? "D-Order";
+      document.title = `D-Order | ${pageTitle}`;
+
       ReactGA.send({
         hitType: "pageview",
         page: location.pathname + location.search,
-        // 저장된 부스 ID가 있으면 페이지뷰에 포함
+        title: pageTitle,
         ...(storedBoothId && { booth_id: storedBoothId }),
       });
       //console.log("📊 페이지뷰 전송:", location.pathname + location.search);
