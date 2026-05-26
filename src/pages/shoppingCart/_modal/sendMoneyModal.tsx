@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import copy from '@assets/icons/copy.svg';
 
 import { ROUTE_CONSTANTS } from '@constants/RouteConstants';
@@ -481,6 +481,19 @@ const SendMoneyModal = ({
         <ConfirmWarnings>
           <p>확인 요청 시 직원이 호출됩니다.</p>
           <p>요청 후 취소가 어려울 수 있습니다.</p>
+          {(staffcallWaiting || confirmSubmitting) && (
+            <WaitingNotice role="status" aria-live="polite">
+              <span className="main">
+                직원이 요청을 수락하는 중입니다
+                <Dots aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </Dots>
+              </span>
+              <span className="sub">잠시만 기다려주세요</span>
+            </WaitingNotice>
+          )}
         </ConfirmWarnings>
         {confirmError && <ConfirmErrorText>{confirmError}</ConfirmErrorText>}
         <ModalConfirm>
@@ -610,6 +623,57 @@ const ConfirmWarnings = styled.div`
   p {
     color: ${({ theme }) => theme.colors.Orange01};
     ${({ theme }) => theme.fonts.SemiBold12}
+  }
+`;
+
+const waitPulse = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+`;
+
+const dotBlink = keyframes`
+  0%, 80%, 100% { opacity: 0.2; }
+  40% { opacity: 1; }
+`;
+
+const WaitingNotice = styled.div`
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.75rem;
+
+  .main {
+    display: inline-flex;
+    align-items: center;
+    color: ${({ theme }) => theme.colors.Black01};
+    ${({ theme }) => theme.fonts.SemiBold12}
+    animation: ${waitPulse} 1.6s ease-in-out infinite;
+  }
+
+  .sub {
+    color: ${({ theme }) => theme.colors.Black02};
+    ${({ theme }) => theme.fonts.Medium12}
+  }
+`;
+
+const Dots = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+
+  i {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background-color: currentColor;
+    animation: ${dotBlink} 1.4s infinite ease-in-out both;
+  }
+  i:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  i:nth-child(3) {
+    animation-delay: 0.4s;
   }
 `;
 
