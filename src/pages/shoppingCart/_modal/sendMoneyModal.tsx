@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import copy from '@assets/icons/copy.svg';
 
 import { ROUTE_CONSTANTS } from '@constants/RouteConstants';
@@ -355,9 +355,9 @@ const SendMoneyModal = ({
         </ConfirmHead>
         <LoadingBody>계좌 정보를 불러오는 중이에요…</LoadingBody>
         <ModalConfirm>
-          <button type="button" onClick={canclePay}>
+          {/* <button type="button" onClick={canclePay}>
             닫기
-          </button>
+          </button> */}
         </ModalConfirm>
       </ModalContainer>,
     );
@@ -473,14 +473,37 @@ const SendMoneyModal = ({
 
   // 2) 송금 완료 확인
   if (step === 'confirm') {
+    const isConfirmWaiting = staffcallWaiting || confirmSubmitting;
+
     return withToast(
       <ModalContainer $narrow>
-        <ConfirmHead>
-          <p>송금을 완료하셨나요?</p>
-        </ConfirmHead>
-        <ConfirmWarnings>
-          <p>확인 요청 시 직원이 호출됩니다.</p>
-          <p>요청 후 취소가 어려울 수 있습니다.</p>
+        {!isConfirmWaiting && (
+          <ConfirmHead>
+            <p>송금을 완료하셨나요?</p>
+          </ConfirmHead>
+        )}
+        <ConfirmWarnings $center={isConfirmWaiting}>
+          {!isConfirmWaiting && (
+            <>
+              <p>확인 요청 시 직원이 호출됩니다.</p>
+              <p>요청 후 취소가 어려울 수 있습니다.</p>
+            </>
+          )}
+          {isConfirmWaiting && (
+            <WaitingNotice role="status" aria-live="polite">
+              <span className="main">
+                직원이 요청을 수락하는 중입니다
+                
+              </span>
+              <span className="sub">잠시만 기다려주세요
+                <Dots aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </Dots>
+              </span>
+            </WaitingNotice>
+          )}
         </ConfirmWarnings>
         {confirmError && <ConfirmErrorText>{confirmError}</ConfirmErrorText>}
         <ModalConfirm>
@@ -522,12 +545,10 @@ const SendMoneyModal = ({
           </button>
           <button
             type="button"
-            disabled={confirmSubmitting || staffcallWaiting}
+            disabled={isConfirmWaiting}
             onClick={() => void handleRequestConfirm()}
           >
-            {confirmSubmitting || staffcallWaiting
-              ? '요청 중…'
-              : '송금 확인 요청'}
+            {isConfirmWaiting ? '요청 중…' : '송금 확인 요청'}
           </button>
         </ModalConfirm>
       </ModalContainer>,
@@ -600,16 +621,70 @@ const ConfirmErrorText = styled.p`
   ${({ theme }) => theme.fonts.SemiBold12}
 `;
 
-const ConfirmWarnings = styled.div`
-  padding: 1rem 2rem 3rem 2rem;
+const ConfirmWarnings = styled.div<{ $center?: boolean }>`
+  grid-row: ${({ $center }) => ($center ? '1 / 3' : 'auto')};
+  padding: ${({ $center }) =>
+    $center ? '2.5rem 2rem' : '1rem 2rem 3rem 2rem'};
   flex-direction: column;
   gap: 0.5rem;
   text-align: center;
   justify-content: center;
+  align-items: center;
   border-bottom: 1px solid #c0c0c0;
   p {
     color: ${({ theme }) => theme.colors.Orange01};
     ${({ theme }) => theme.fonts.SemiBold12}
+  }
+`;
+
+const colorBreathe = keyframes`
+  0%, 100% { color: #ff6e3f; opacity: 1; }
+  50% { color: #8a8a8a; opacity: 0.75; }
+`;
+
+const dotBlink = keyframes`
+  0%, 80%, 100% { opacity: 0.2; }
+  40% { opacity: 1; }
+`;
+
+const WaitingNotice = styled.div`
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  text-align: center;
+  width: 100%;
+
+  .main,
+  .sub {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    color: ${({ theme }) => theme.colors.Orange01};
+    ${({ theme }) => theme.fonts.SemiBold14}
+    animation: ${colorBreathe} 1.8s ease-in-out infinite;
+  }
+`;
+
+const Dots = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+
+  i {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background-color: currentColor;
+    animation: ${dotBlink} 1.4s infinite ease-in-out both;
+  }
+  i:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  i:nth-child(3) {
+    animation-delay: 0.4s;
   }
 `;
 
@@ -628,6 +703,7 @@ const StaffComingBody = styled.div`
   p.highlight {
     color: ${({ theme }) => theme.colors.Orange01};
     ${({ theme }) => theme.fonts.SemiBold14}
+    animation: ${colorBreathe} 1.8s ease-in-out infinite;
   }
 `;
 
