@@ -59,7 +59,7 @@ export function useCartWebSocket(tableUsageId: string | null) {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('[CartWS] ✅ 연결됨:', wsUrl);
+        // console.log('[CartWS] ✅ 연결됨:', wsUrl);
         reconnectAttempts.current = 0;
 
         clearHeartbeat();
@@ -83,12 +83,12 @@ export function useCartWebSocket(tableUsageId: string | null) {
           }
 
           const payload = parsed as unknown as CartWsPayload;
-          console.log('[CartWS] 📩 메시지 수신:', {
-            type: payload?.type,
-            cartStatus: payload?.data?.cart?.status,
-            message: payload?.message,
-            data: payload?.data,
-          });
+          // console.log('[CartWS] 📩 메시지 수신:', {
+          //   type: payload?.type,
+          //   cartStatus: payload?.data?.cart?.status,
+          //   message: payload?.message,
+          //   data: payload?.data,
+          // });
 
           // 어드민 테이블 초기화로 인한 cart 종료 → 로그인 화면으로.
           // BE 페이로드: { type: "CART_RESET", data: { table_usage_id, ended: true } }
@@ -97,15 +97,15 @@ export function useCartWebSocket(tableUsageId: string | null) {
             payload?.type === 'CART_RESET' &&
             (payload.data as { ended?: boolean } | null)?.ended === true
           ) {
-            console.warn(
-              '[CartWS] 🔄 테이블 초기화 감지 → 로그인 화면으로 이동',
-            );
+            // console.warn(
+            //   '[CartWS] 🔄 테이블 초기화 감지 → 로그인 화면으로 이동',
+            // );
             redirectToLoginAfterTableReset();
             return;
           }
 
           if (payload?.type === 'CART_MERGED') {
-            console.warn('[CartWS] 🔀 테이블 병합 감지 → 토스트 후 재입장 화면 이동');
+            // console.warn('[CartWS] 🔀 테이블 병합 감지 → 토스트 후 재입장 화면 이동');
             intentionalCloseRef.current = true;
             clearHeartbeat();
             if (reconnectTimeoutRef.current) {
@@ -124,16 +124,16 @@ export function useCartWebSocket(tableUsageId: string | null) {
             setSnapshot(payload.data);
           }
         } catch (err) {
-          console.error('[CartWS] ❌ 파싱 에러:', err, event.data);
+          // console.error('[CartWS] ❌ 파싱 에러:', err, event.data);
         }
       };
 
       ws.onclose = (e) => {
         clearHeartbeat();
-        console.log('[CartWS] 🔌 연결 종료:', {
-          code: e.code,
-          reason: e.reason,
-        });
+        // console.log('[CartWS] 🔌 연결 종료:', {
+        //   code: e.code,
+        //   reason: e.reason,
+        // });
         wsRef.current = null;
 
         if (intentionalCloseRef.current) {
@@ -141,7 +141,7 @@ export function useCartWebSocket(tableUsageId: string | null) {
         }
 
         if (e.code === AUTH_FAILURE_CLOSE_CODE) {
-          console.warn('[CartWS] ⚠️ 인증 실패로 종료 (4001)');
+          // console.warn('[CartWS] ⚠️ 인증 실패로 종료 (4001)');
           setSnapshot(null);
           return;
         }
@@ -152,8 +152,8 @@ export function useCartWebSocket(tableUsageId: string | null) {
         }
       };
 
-      ws.onerror = (err) => {
-        console.error('[CartWS] ❌ 에러 발생:', err);
+      ws.onerror = () => {
+        // console.error('[CartWS] ❌ 에러 발생:', err);
       };
     };
 

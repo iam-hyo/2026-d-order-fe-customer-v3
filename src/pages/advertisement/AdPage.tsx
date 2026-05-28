@@ -242,6 +242,7 @@ const AdPage = () => {
 
 const isComingSoon = activeDay !== '2026-05-26' && activeDay > getTodayStr();
   const isTodayBeforeOpen = activeDay === getTodayStr() && new Date().getHours() < 17;
+  const isPastDay = activeDay < getTodayStr();
 
   // [MOCK ↔ API 전환 지점] 현재 실 API 사용.
   // mock 으로 돌리려면 아래 API 한 줄을 주석 처리하고 mock 블록 주석 해제.
@@ -487,7 +488,7 @@ const isComingSoon = activeDay !== '2026-05-26' && activeDay > getTodayStr();
           ) : (
             <BoothGrid key={activeDay} $slideDir={slideDir}>
               {displayItems.map((b, idx) => {
-                const isFull = !isComingSoon && !isTodayBeforeOpen && b.status === 'FULL';
+                const isFull = !isComingSoon && !isTodayBeforeOpen && !isPastDay && b.status === 'FULL';
                 const progressPct = b.capacity > 0 ? (b.remaining / b.capacity) * 100 : 0;
                 return (
                   <BoothCard key={idx} $isFull={isFull} $glass={USE_GLASS_CARD}>
@@ -501,13 +502,15 @@ const isComingSoon = activeDay !== '2026-05-26' && activeDay > getTodayStr();
                     <BoothCardBody>
                       <BoothNameRow>
                         <BoothCardName>{b.name}</BoothCardName>
-                        {!isComingSoon && !isTodayBeforeOpen && (
+                        {!isComingSoon && !isTodayBeforeOpen && !isPastDay && (
                           <StatusBadge $status={b.status}>{STATUS_LABELS[b.status]}</StatusBadge>
                         )}
                       </BoothNameRow>
                       {b.location && <BoothCardLocation>{b.location}</BoothCardLocation>}
 
-                      {isComingSoon ? (
+                      {isPastDay ? (
+                        <ClosedMsg>이미 마감된 부스에요 :) 내년에 찾아주세요!</ClosedMsg>
+                      ) : isComingSoon ? (
                         <BoothCardPreview>총 {b.capacity}석</BoothCardPreview>
                       ) : isTodayBeforeOpen ? (
                         <OpenSoonMsg>17시부터 공개 · 총 {b.capacity}석</OpenSoonMsg>
@@ -515,7 +518,7 @@ const isComingSoon = activeDay !== '2026-05-26' && activeDay > getTodayStr();
                         <RemainingLabel>남은 테이블</RemainingLabel>
                       )}
 
-                      {!isComingSoon && (
+                      {!isComingSoon && !isPastDay && (
                         <BoothProgressRow>
                           <BoothProgressBar
                             $status={isTodayBeforeOpen ? 'AVAILABLE' : b.status}
@@ -1027,6 +1030,15 @@ const OpenSoonMsg = styled.span`
   font-size: 11px;
   font-weight: 600;
   color: ${CARD_TEXT_MUTED};
+  font-family: 'SUIT', sans-serif;
+  margin-top: 4px;
+  letter-spacing: -0.01em;
+`;
+
+const ClosedMsg = styled.span`
+  font-size: 11px;
+  font-weight: 500;
+  color: ${CARD_TEXT_DIM};
   font-family: 'SUIT', sans-serif;
   margin-top: 4px;
   letter-spacing: -0.01em;

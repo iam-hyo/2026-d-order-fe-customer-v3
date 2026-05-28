@@ -237,7 +237,7 @@ const useMenuListPage = () => {
         const allItemsSorted = sortByPriceDesc(allItems, (i) => i.price);
         setMenuItems(allItemsSorted);
       } catch (e) {
-        console.error(e);
+        // console.error(e);
         setMenuItems([]);
       } finally {
         setIsLoading(false);
@@ -419,7 +419,7 @@ const useMenuListPage = () => {
         setIsModalOpen2(true);
       }, 300);
     } catch (e: any) {
-      console.error(e);
+      // console.error(e);
       const body = e?.response?.data as
         | { message?: string; data?: { detail?: string } }
         | undefined;

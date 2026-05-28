@@ -46,7 +46,7 @@ export const fetchBoothName = async (boothId: string): Promise<string> => {
     return 'QR코드를 다시 찍어주세요.';
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      console.error('부스 이름 조회 실패:', error.response.data);
+      // console.error('부스 이름 조회 실패:', error.response.data);
     }
     return 'QR코드를 다시 찍어주세요.';
   }
